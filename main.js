@@ -1,6 +1,6 @@
 const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
-  appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
+  appsScriptUrl: "",
   whatsappNumber: "6583963088",
 };
 
@@ -114,7 +114,7 @@ async function handleSubmit(event) {
       setStatus(result.found ? "Preview ready. The report email flow is connected in Apps Script." : "Request received. Manual-review flow shown below.", "success");
     }
   } catch (error) {
-    setStatus("Something went wrong. Please try again or contact us on WhatsApp.", "error");
+    setStatus(`Something went wrong: ${error.message || "Please try again or contact us on WhatsApp."}`, "error");
     submitButton.disabled = false;
     submitButton.textContent = "Generate free report";
   }
