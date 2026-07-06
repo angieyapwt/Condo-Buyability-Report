@@ -80,6 +80,7 @@ const resultSection = document.querySelector("#resultSection");
 const reportMount = document.querySelector("#reportMount");
 const suggestions = document.querySelector("#condoSuggestions");
 const whatsappCta = document.querySelector("#whatsappCta");
+const submitButton = form.querySelector('button[type="submit"]');
 
 function init() {
   suggestions.innerHTML = demoCondos.map((condo) => `<option value="${escapeHtml(condo.developmentName)}"></option>`).join("");
@@ -89,6 +90,7 @@ function init() {
 
 async function handleSubmit(event) {
   event.preventDefault();
+  if (submitButton.disabled) return;
   setStatus("", "");
 
   const lead = collectLead();
@@ -98,14 +100,23 @@ async function handleSubmit(event) {
     return;
   }
 
+  submitButton.disabled = true;
+  submitButton.textContent = "Generating report...";
   setStatus("Generating your preview and email request...", "");
 
   try {
     const result = CONFIG.appsScriptUrl ? await submitToAppsScript(lead) : demoLookup(lead);
+    if (result && result.ok === false) throw new Error(result.error || "Request failed");
     renderResult(lead, result);
-    setStatus(result.found ? "Preview ready. The report email flow is connected in Apps Script." : "Request received. Manual-review flow shown below.", "success");
+    if (result.duplicate) {
+      setStatus("This report was already requested with this email or WhatsApp number.", "success");
+    } else {
+      setStatus(result.found ? "Preview ready. The report email flow is connected in Apps Script." : "Request received. Manual-review flow shown below.", "success");
+    }
   } catch (error) {
     setStatus("Something went wrong. Please try again or contact us on WhatsApp.", "error");
+    submitButton.disabled = false;
+    submitButton.textContent = "Generate free report";
   }
 }
 
@@ -144,12 +155,31 @@ function renderResult(lead, result) {
   resultSection.hidden = false;
   whatsappCta.href = whatsappLink(lead);
 
+  if (result.duplicate) {
+    document.querySelector("#resultTitle").textContent = "Report already requested";
+    reportMount.innerHTML = `
+      <div class="manual-message">
+        <p class="eyebrow">One free report per contact</p>
+        <h3>This report has already been sent.</h3>
+        <p>
+          This email or WhatsApp number has already requested the preliminary report for
+          <strong>${escapeHtml(result.matchedDevelopment || lead.condo)}</strong>.
+        </p>
+        <p>
+          If you are looking at a specific unit now, send us the listing link on WhatsApp and we will
+          complete the masked price and rental analysis.
+        </p>
+      </div>`;
+    scrollToResult();
+    return;
+  }
+
   if (!result.found) {
     document.querySelector("#resultTitle").textContent = "Manual review requested";
     reportMount.innerHTML = `
       <div class="manual-message">
         <p class="eyebrow">Development not in database yet</p>
-        <h3>We will prepare this scorecard manually.</h3>
+        <h3>We will prepare this report manually.</h3>
         <p>
           Thanks ${escapeHtml(lead.name)}. We do not have a completed database profile for
           <strong>${escapeHtml(lead.condo)}</strong> yet. You will receive an email acknowledgement
@@ -182,11 +212,14 @@ function renderResult(lead, result) {
     .join("");
 
   node.querySelector('[data-field="scoreBars"]').innerHTML = report.sectionScores
-    .map(([label, value]) => `
+    .map(([label, value]) => {
+      const locked = (label === "Price" || label === "Rental") && Number(value) === 0;
+      return `
       <div>
-        <div class="bar-label"><span>${escapeHtml(label)}</span><span>${value}%</span></div>
-        <div class="bar-track"><div class="bar-fill" style="width:${value}%"></div></div>
-      </div>`)
+        <div class="bar-label"><span>${escapeHtml(label)}</span><span>${locked ? "Listing required" : `${value}%`}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${locked ? 0 : value}%"></div></div>
+      </div>`;
+    })
     .join("");
 
   node.querySelector('[data-field="strengths"]').innerHTML = report.strengths.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
@@ -211,7 +244,7 @@ function infoRows(report) {
 }
 
 function whatsappLink(lead) {
-  const text = `Hi, I requested the condo scorecard for ${lead.condo}. I would like to send the actual listing to unlock the price and rental analysis.`;
+  const text = `Hi, I requested the Condo Buyability Report for ${lead.condo}. I would like to send the actual listing to unlock the price and rental analysis.`;
   return `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(text)}`;
 }
 
