@@ -1,6 +1,6 @@
 const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
-  appsScriptUrl: "",
+  appsScriptUrl: "https://script.google.com/macros/s/AKfycbzcRnqetZWWfxGPMnWKTOBrsh_J0ZlH3lp5aEhfIf5ylrng6tAcDCsRfgLO4fzefivadQ/exec",
   whatsappNumber: "6583963088",
 };
 
