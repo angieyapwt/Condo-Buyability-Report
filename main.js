@@ -4,6 +4,8 @@ const CONFIG = {
   whatsappNumber: "6583963088",
 };
 
+const CONTACT_WHATSAPP_URL = `https://wa.me/${CONFIG.whatsappNumber}`;
+
 const demoCondos = [
   {
     developmentName: "The A",
@@ -106,7 +108,7 @@ async function handleSubmit(event) {
     const result = CONFIG.appsScriptUrl ? await submitToAppsScript(lead) : demoLookup(lead);
     if (result && result.ok === false) throw new Error(result.error || "Request failed");
     renderResult(lead, result);
-    submitButton.textContent = result.found && !result.duplicate ? "Report emailed" : "Request received";
+    submitButton.textContent = result.duplicate ? "Already requested" : result.found ? "Report emailed" : "Request received";
     if (result.duplicate) {
       setStatus("This report was already requested with this email or WhatsApp number.", "success");
     } else {
@@ -118,9 +120,9 @@ async function handleSubmit(event) {
       );
     }
   } catch (error) {
-    setStatus(`Something went wrong: ${error.message || "Please try again or contact us on WhatsApp."}`, "error");
+    showGenericError();
     submitButton.disabled = false;
-    submitButton.textContent = "Email me my free report";
+    submitButton.textContent = "Get My Free Report";
   }
 }
 
@@ -162,17 +164,15 @@ function renderResult(lead, result) {
     document.querySelector("#resultTitle").textContent = "Report already requested";
     reportMount.innerHTML = `
       <div class="manual-message">
-        <p class="eyebrow">One free report per contact</p>
-        <h3>This report has already been sent.</h3>
+        <p class="eyebrow">One free report per person</p>
+        <h3>You have already downloaded a free report before.</h3>
         <p>
-          This email or WhatsApp number has already requested the preliminary report for
-          <strong>${escapeHtml(result.matchedDevelopment || lead.condo)}</strong>.
+          Each email or WhatsApp number is entitled to one free report.
         </p>
         <p>
-          If you are looking at a specific unit now, you can send us the listing details and we will
-          complete the unit-level price and rental review.
+          If you would like to check another condo, please contact us directly.
         </p>
-        <a class="whatsapp-button" href="${whatsappLink(lead)}" target="_blank" rel="noreferrer">WhatsApp Us</a>
+        <a class="whatsapp-button" href="${CONTACT_WHATSAPP_URL}" target="_blank" rel="noreferrer">WhatsApp Us</a>
       </div>`;
     scrollToResult();
     return;
@@ -205,16 +205,28 @@ function renderResult(lead, result) {
       <p class="eyebrow">Report sent</p>
       <h3>Your Free Condo Buyability Report has been sent to your email.</h3>
       <p>
-        Please check <strong>${escapeHtml(lead.email)}</strong>. The report includes the available development-level
-        assessment and clearly marks the unit-level price and rental sections that require listing details.
-      </p>
-      <p>
-        To complete the masked sections later, send us the listing URL, bedroom type and floor area.
+        Please check <strong>${escapeHtml(lead.email)}</strong>.
       </p>
       <a class="whatsapp-button" href="${whatsappLink(lead)}" target="_blank" rel="noreferrer">WhatsApp Us</a>
     </div>`;
   scrollToResult();
 }
+
+function showGenericError() {
+  const message = "We could not generate the report at the moment. Please contact us directly on WhatsApp and we will help you from there.";
+  setStatus(message, "error");
+  resultSection.hidden = false;
+  document.querySelector("#resultTitle").textContent = "Report request needs help";
+  reportMount.innerHTML = `
+    <div class="manual-message">
+      <p class="eyebrow">Report request</p>
+      <h3>We could not generate the report at the moment.</h3>
+      <p>Please contact us directly on WhatsApp and we will help you from there.</p>
+      <a class="whatsapp-button" href="${CONTACT_WHATSAPP_URL}" target="_blank" rel="noreferrer">WhatsApp Us</a>
+    </div>`;
+  scrollToResult();
+}
+
 
 function infoRows(report) {
   return [
