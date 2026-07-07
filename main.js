@@ -79,13 +79,11 @@ const statusEl = document.querySelector("#formStatus");
 const resultSection = document.querySelector("#resultSection");
 const reportMount = document.querySelector("#reportMount");
 const suggestions = document.querySelector("#condoSuggestions");
-const whatsappCta = document.querySelector("#whatsappCta");
 const submitButton = form.querySelector('button[type="submit"]');
 
 function init() {
-  suggestions.innerHTML = demoCondos.map((condo) => `<option value="${escapeHtml(condo.developmentName)}"></option>`).join("");
+  suggestions.innerHTML = "";
   form.addEventListener("submit", handleSubmit);
-  document.querySelector("#printReport").addEventListener("click", () => window.print());
 }
 
 async function handleSubmit(event) {
@@ -101,22 +99,28 @@ async function handleSubmit(event) {
   }
 
   submitButton.disabled = true;
-  submitButton.textContent = "Generating report...";
-  setStatus("Generating your preview and email request...", "");
+  submitButton.textContent = "Sending report...";
+  setStatus("Preparing your free report and sending it to your email...", "");
 
   try {
     const result = CONFIG.appsScriptUrl ? await submitToAppsScript(lead) : demoLookup(lead);
     if (result && result.ok === false) throw new Error(result.error || "Request failed");
     renderResult(lead, result);
+    submitButton.textContent = result.found && !result.duplicate ? "Report emailed" : "Request received";
     if (result.duplicate) {
       setStatus("This report was already requested with this email or WhatsApp number.", "success");
     } else {
-      setStatus(result.found ? "Preview ready. The report email flow is connected in Apps Script." : "Request received. Manual-review flow shown below.", "success");
+      setStatus(
+        result.found
+          ? "Your PDF report has been sent to your email."
+          : "Request received. We will prepare this report manually and email you in about 1-3 working days.",
+        "success",
+      );
     }
   } catch (error) {
     setStatus(`Something went wrong: ${error.message || "Please try again or contact us on WhatsApp."}`, "error");
     submitButton.disabled = false;
-    submitButton.textContent = "Generate free report";
+    submitButton.textContent = "Email me my free report";
   }
 }
 
@@ -132,8 +136,8 @@ function collectLead() {
 
 function validateLead(lead) {
   if (!lead.name) return "Please enter your name.";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead.email)) return "Please enter a valid email address.";
-  if (!/^\+?[0-9\s-]{8,18}$/.test(lead.whatsapp)) return "Please enter a valid WhatsApp number.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(lead.email)) return "Please enter a valid email address.";
+  if (!isSingaporeWhatsapp(lead.whatsapp)) return "Please enter a valid Singapore WhatsApp number, e.g. 91234567, 6591234567 or +6591234567.";
   if (!lead.condo) return "Please enter the condo name.";
   return "";
 }
@@ -153,7 +157,6 @@ function submitToAppsScript(lead) {
 
 function renderResult(lead, result) {
   resultSection.hidden = false;
-  whatsappCta.href = whatsappLink(lead);
 
   if (result.duplicate) {
     document.querySelector("#resultTitle").textContent = "Report already requested";
@@ -166,9 +169,10 @@ function renderResult(lead, result) {
           <strong>${escapeHtml(result.matchedDevelopment || lead.condo)}</strong>.
         </p>
         <p>
-          If you are looking at a specific unit now, send us the listing link on WhatsApp and we will
-          complete the masked price and rental analysis.
+          If you are looking at a specific unit now, you can send us the listing details and we will
+          complete the unit-level price and rental review.
         </p>
+        <a class="whatsapp-button" href="${whatsappLink(lead)}" target="_blank" rel="noreferrer">WhatsApp Us</a>
       </div>`;
     scrollToResult();
     return;
@@ -186,45 +190,29 @@ function renderResult(lead, result) {
           first, and we can prepare the report in about 1-3 working days.
         </p>
         <p>
-          To speed this up, send us the actual listing link on WhatsApp. That lets us complete the
+          To speed this up, send us the actual listing link. That lets us complete the
           entry PSF, price percentile, rental yield and rentability sections with current listing data.
         </p>
+        <a class="whatsapp-button" href="${whatsappLink(lead)}" target="_blank" rel="noreferrer">WhatsApp Us</a>
       </div>`;
     scrollToResult();
     return;
   }
 
-    document.querySelector("#resultTitle").textContent = "Your preliminary buyability report is ready";
-  reportMount.innerHTML = "";
-  const node = document.querySelector("#reportTemplate").content.cloneNode(true);
-  const report = result.report;
-
-  setNode(node, "date", formatDate(new Date()));
-  setNode(node, "clientName", lead.name);
-  setNode(node, "developmentName", report.developmentName);
-  setNode(node, "developmentHeading", report.developmentName);
-  setNode(node, "summary", report.summary);
-  setNode(node, "score", report.score);
-  setNode(node, "verdict", report.verdict);
-
-  node.querySelector('[data-field="infoGrid"]').innerHTML = infoRows(report)
-    .map(([label, value]) => `<div><b>${escapeHtml(label)}</b><span>${escapeHtml(value || "-")}</span></div>`)
-    .join("");
-
-  node.querySelector('[data-field="scoreBars"]').innerHTML = report.sectionScores
-    .map(([label, value]) => {
-      const locked = (label === "Price" || label === "Rental") && Number(value) === 0;
-      return `
-      <div>
-        <div class="bar-label"><span>${escapeHtml(label)}</span><span>${locked ? "Listing required" : `${value}%`}</span></div>
-        <div class="bar-track"><div class="bar-fill" style="width:${locked ? 0 : value}%"></div></div>
-      </div>`;
-    })
-    .join("");
-
-  node.querySelector('[data-field="strengths"]').innerHTML = report.strengths.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
-  node.querySelector('[data-field="risks"]').innerHTML = report.risks.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
-  reportMount.appendChild(node);
+  document.querySelector("#resultTitle").textContent = "Your report has been sent";
+  reportMount.innerHTML = `
+    <div class="manual-message">
+      <p class="eyebrow">Report sent</p>
+      <h3>Your Free Condo Buyability Report has been sent to your email.</h3>
+      <p>
+        Please check <strong>${escapeHtml(lead.email)}</strong>. The report includes the available development-level
+        assessment and clearly marks the unit-level price and rental sections that require listing details.
+      </p>
+      <p>
+        To complete the masked sections later, send us the listing URL, bedroom type and floor area.
+      </p>
+      <a class="whatsapp-button" href="${whatsappLink(lead)}" target="_blank" rel="noreferrer">WhatsApp Us</a>
+    </div>`;
   scrollToResult();
 }
 
@@ -244,7 +232,7 @@ function infoRows(report) {
 }
 
 function whatsappLink(lead) {
-  const text = `Hi, I requested the Condo Buyability Report for ${lead.condo}. I would like to send the actual listing to unlock the price and rental analysis.`;
+  const text = `Hi, I requested the Condo Buyability Report for ${lead.condo}. I would like to send the details to complete the price and rental analysis.`;
   return `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(text)}`;
 }
 
@@ -272,7 +260,7 @@ function jsonp(url, params) {
     const timer = setTimeout(() => {
       cleanup();
       reject(new Error("Request timed out"));
-    }, 12000);
+    }, 45000);
     function cleanup() {
       clearTimeout(timer);
       delete window[callback];
@@ -297,6 +285,18 @@ function normalize(value) {
 
 function formatDate(date) {
   return date.toLocaleDateString("en-SG", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function formatDateForFile(date) {
+  return date.toLocaleDateString("en-SG", { day: "2-digit", month: "short", year: "numeric" }).replace(/\s/g, "-");
+}
+
+function isSingaporeWhatsapp(value) {
+  const raw = String(value || "").trim();
+  const compact = raw.replace(/[\s-]/g, "");
+  if (/^[89]\d{7}$/.test(compact)) return true;
+  if (/^65[89]\d{7}$/.test(compact)) return true;
+  return /^\+65[89]\d{7}$/.test(compact);
 }
 
 function escapeHtml(value) {

@@ -6,7 +6,7 @@
     <title>Free Condo Buyability Report | EstateBasics</title>
     <meta
       name="description"
-      content="Get a free preliminary Condo Buyability Report instantly. Listing-specific price and rental analysis is completed after you send the actual listing."
+      content="Get a free Condo Buyability Report sent to your email. Listing-specific price and rental analysis is completed after you send the actual listing."
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -14,7 +14,7 @@
     <main>
       <section class="hero">
         <div class="hero__copy">
-          <p class="eyebrow">Free preliminary report</p>
+          <p class="eyebrow">Free PDF assessment</p>
           <h1>Condo Buyability Report</h1>
           <p class="hero__lede">
             Every shortlisted condominium is independently assessed using our proprietary Buyability Framework,
@@ -22,43 +22,42 @@
             purchase with greater clarity and confidence.
           </p>
           <div class="trust-row" aria-label="Report highlights">
-            <span>Instant preview</span>
-            <span>PDF by email</span>
-            <span>WhatsApp unlock</span>
+            <span>Instant report to your email. No cost, no obligation.</span>
           </div>
         </div>
 
         <form id="leadForm" class="lead-form" novalidate>
           <div class="form-head">
             <p class="eyebrow">Start here</p>
-            <h2>Get your condo buyability report</h2>
+            <h2>Download your free report</h2>
           </div>
 
           <label>
             Your name
-            <input id="name" name="name" autocomplete="name" required placeholder="Example: Cheryl" />
+            <input id="name" name="name" autocomplete="name" required />
           </label>
 
           <label>
             Email address
-            <input id="email" name="email" type="email" autocomplete="email" required placeholder="name@email.com" />
+            <input id="email" name="email" type="email" autocomplete="email" required />
           </label>
 
           <label>
             WhatsApp number
-            <input id="whatsapp" name="whatsapp" inputmode="tel" autocomplete="tel" required placeholder="+65 9123 4567" />
+            <input id="whatsapp" name="whatsapp" inputmode="tel" autocomplete="tel" required />
           </label>
 
           <label>
             Condo name
-            <input id="condo" name="condo" required list="condoSuggestions" placeholder="Example: The Avenir" />
+            <input id="condo" name="condo" required list="condoSuggestions" />
             <datalist id="condoSuggestions"></datalist>
           </label>
 
-          <button type="submit" class="primary">Generate free report</button>
+          <button type="submit" class="primary">Email me my free report</button>
           <p id="formStatus" class="form-status" role="status"></p>
           <p class="privacy-note">
-            By submitting, you agree to receive the report and follow-up about this condo request.
+            By submitting this form, I consent to my name and contact details being collected and used solely to
+            review this enquiry and contact me for this Condo Report.
           </p>
         </form>
       </section>
@@ -66,104 +65,13 @@
       <section id="resultSection" class="result-section" hidden>
         <div class="result-head">
           <div>
-            <p class="eyebrow">Client preview</p>
-            <h2 id="resultTitle">Your preliminary buyability report is ready</h2>
-          </div>
-          <div class="result-actions">
-            <a id="whatsappCta" class="whatsapp-button" href="#" target="_blank" rel="noreferrer">Send listing on WhatsApp</a>
-            <button id="printReport" type="button">Save as PDF</button>
+            <p class="eyebrow">Report request</p>
+            <h2 id="resultTitle">Your report is being prepared</h2>
           </div>
         </div>
         <div id="reportMount"></div>
       </section>
     </main>
-
-    <template id="reportTemplate">
-      <article class="report-page">
-        <section class="report-cover">
-          <div class="cover-date" data-field="date"></div>
-          <div class="cover-title">
-            <span>Condo</span>
-            <span>Buyability</span>
-            <span>Report</span>
-          </div>
-          <div class="cover-client">For <strong data-field="clientName"></strong></div>
-          <p>
-            Every shortlisted condominium is independently assessed using our proprietary Buyability Framework,
-            providing a clear comparison of each property's strengths, risks, and overall buyability so you can
-            purchase with greater clarity and confidence.
-          </p>
-          <div class="cover-footer">
-            <strong>Development checked:</strong>
-            <span data-field="developmentName"></span>
-          </div>
-        </section>
-
-        <section class="report-body">
-          <div class="report-kicker">Preliminary Buyability Report</div>
-          <div class="report-summary">
-            <div>
-              <h3 data-field="developmentHeading"></h3>
-              <p data-field="summary"></p>
-            </div>
-            <div class="score-block">
-              <span data-field="score"></span>
-              <small>%</small>
-              <strong data-field="verdict"></strong>
-            </div>
-          </div>
-
-          <div class="info-grid" data-field="infoGrid"></div>
-
-          <h4>Section Scoring</h4>
-          <div class="score-bars" data-field="scoreBars"></div>
-
-          <div class="insight-grid">
-            <div>
-              <h4>Strengths</h4>
-              <ul data-field="strengths"></ul>
-            </div>
-            <div>
-              <h4>Risk Flags</h4>
-              <ul data-field="risks"></ul>
-            </div>
-          </div>
-
-          <h4>Listing-Specific Analysis</h4>
-          <div class="locked-grid">
-            <div class="locked-card">
-              <span>Entry PSF</span>
-              <strong>Listing required</strong>
-              <p>Send the actual listing so we can verify asking price, size and comparable PSF.</p>
-            </div>
-            <div class="locked-card">
-              <span>Entry Price Percentile</span>
-              <strong>Listing required</strong>
-              <p>We compare the unit against recent project and bedroom-type transactions.</p>
-            </div>
-            <div class="locked-card">
-              <span>Rental Yield</span>
-              <strong>Listing required</strong>
-              <p>Yield depends on live asking price, unit size, rent evidence and assumptions.</p>
-            </div>
-            <div class="locked-card">
-              <span>Rentability</span>
-              <strong>Listing required</strong>
-              <p>We complete this after checking rental transaction depth and tenant demand.</p>
-            </div>
-          </div>
-
-          <div class="cta-box">
-            <strong>Want the full price and rental view?</strong>
-            <p>WhatsApp or email us the exact listing link. We will complete the masked sections after reviewing the unit-level details.</p>
-          </div>
-
-          <footer>
-            This preliminary report is for decision support only and does not constitute financial, investment, legal or property advice.
-          </footer>
-        </section>
-      </article>
-    </template>
 
     <script src="./main.js"></script>
   </body>
