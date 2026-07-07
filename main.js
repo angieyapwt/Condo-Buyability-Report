@@ -172,28 +172,28 @@ function renderResult(lead, result) {
         <p>
           If you would like to check another condo, please contact us directly.
         </p>
-        <a class="whatsapp-button" href="${CONTACT_WHATSAPP_URL}" target="_blank" rel="noreferrer">WhatsApp Us</a>
+        <a class="whatsapp-button" href="${duplicateWhatsappLink(lead)}" target="_blank" rel="noreferrer">WhatsApp Us</a>
       </div>`;
     scrollToResult();
     return;
   }
 
   if (!result.found) {
-    document.querySelector("#resultTitle").textContent = "Manual review requested";
+    document.querySelector("#resultTitle").textContent = "Development under Review";
     reportMount.innerHTML = `
       <div class="manual-message">
-        <p class="eyebrow">Development not in database yet</p>
+        <p class="eyebrow">Development under Review</p>
         <h3>We will prepare this report manually.</h3>
         <p>
           Thanks ${escapeHtml(lead.name)}. We do not have a completed database profile for
-          <strong>${escapeHtml(lead.condo)}</strong> yet. You will receive an email acknowledgement
-          first, and we can prepare the report in about 1-3 working days.
+          <strong>${escapeHtml(lead.condo)}</strong> yet. You will receive an email acknowledgement first
+          and we will prepare and email you the report in about 1-3 working days.
         </p>
         <p>
           To speed this up, send us the actual listing link. That lets us complete the
           entry PSF, price percentile, rental yield and rentability sections with current listing data.
         </p>
-        <a class="whatsapp-button" href="${whatsappLink(lead)}" target="_blank" rel="noreferrer">WhatsApp Us</a>
+        <a class="whatsapp-button" href="${whatsappLink(lead)}" target="_blank" rel="noreferrer">WhatsApp Us for faster response</a>
       </div>`;
     scrollToResult();
     return;
@@ -222,7 +222,7 @@ function showGenericError() {
       <p class="eyebrow">Report request</p>
       <h3>We could not generate the report at the moment.</h3>
       <p>Please contact us directly on WhatsApp and we will help you from there.</p>
-      <a class="whatsapp-button" href="${CONTACT_WHATSAPP_URL}" target="_blank" rel="noreferrer">WhatsApp Us</a>
+      <a class="whatsapp-button" href="${errorWhatsappLink()}" target="_blank" rel="noreferrer">WhatsApp Us</a>
     </div>`;
   scrollToResult();
 }
@@ -245,6 +245,20 @@ function infoRows(report) {
 
 function whatsappLink(lead) {
   const text = `Hi, I requested the Condo Buyability Report for ${lead.condo}. I would like to send the details to complete the price and rental analysis.`;
+  return `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(text)}`;
+}
+
+function duplicateWhatsappLink(lead) {
+  const text = `Hi, I have already download your Free Buyability Report for ${lead.condo}. I would also like to check on:
+Condo:
+Bedroom Type:
+Listing URL if any:`;
+  return `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(text)}`;
+}
+
+function errorWhatsappLink() {
+  const lead = collectLead();
+  const text = `Hi, I tried to download your Buyability Report for ${lead.condo || "this condo"} but there was an error.`;
   return `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(text)}`;
 }
 
