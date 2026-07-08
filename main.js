@@ -108,17 +108,13 @@ async function handleSubmit(event) {
     const result = CONFIG.appsScriptUrl ? await submitToAppsScript(lead) : demoLookup(lead);
     if (result && result.ok === false) throw new Error(result.error || "Request failed");
     renderResult(lead, result);
-    submitButton.textContent = result.duplicate ? "Already requested" : result.found ? "Report emailed" : "Request received";
-    if (result.duplicate) {
-      setStatus("This report was already requested with this email or WhatsApp number.", "success");
-    } else {
-      setStatus(
-        result.found
-          ? "Your PDF report has been sent to your email."
-          : "Request received. We will prepare this report manually and email you in about 1-3 working days.",
-        "success",
-      );
-    }
+    submitButton.textContent = result.found ? "Report emailed" : "Request received";
+    setStatus(
+      result.found
+        ? "Your PDF report has been sent to your email."
+        : "Request received. We will prepare this report manually and email you in about 1-3 working days.",
+      "success",
+    );
   } catch (error) {
     showGenericError();
     submitButton.disabled = false;
@@ -159,24 +155,6 @@ function submitToAppsScript(lead) {
 
 function renderResult(lead, result) {
   resultSection.hidden = false;
-
-  if (result.duplicate) {
-    document.querySelector("#resultTitle").textContent = "Report already requested";
-    reportMount.innerHTML = `
-      <div class="manual-message">
-        <p class="eyebrow">One free report per person</p>
-        <h3>You have already downloaded a free report before.</h3>
-        <p>
-          Each email or WhatsApp number is entitled to one free report.
-        </p>
-        <p>
-          If you would like to check another condo, please contact us directly.
-        </p>
-        <a class="whatsapp-button" href="${duplicateWhatsappLink(lead)}" target="_blank" rel="noreferrer">WhatsApp Us</a>
-      </div>`;
-    scrollToResult();
-    return;
-  }
 
   if (!result.found) {
     document.querySelector("#resultTitle").textContent = "Development under Review";
@@ -245,14 +223,6 @@ function infoRows(report) {
 
 function whatsappLink(lead) {
   const text = `Hi, I requested the Condo Buyability Report for ${lead.condo}. I would like to send the details to complete the price and rental analysis.`;
-  return `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(text)}`;
-}
-
-function duplicateWhatsappLink(lead) {
-  const text = `Hi, I have already download your Free Buyability Report for ${lead.condo}. I would also like to check on:
-Condo:
-Bedroom Type:
-Listing URL if any:`;
   return `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(text)}`;
 }
 
