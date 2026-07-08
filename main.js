@@ -164,8 +164,8 @@ function renderResult(lead, result) {
         <h3>We will prepare this report manually.</h3>
         <p>
           Thanks ${escapeHtml(lead.name)}. We do not have a completed database profile for
-          <strong>${escapeHtml(lead.condo)}</strong> yet. You will receive an email acknowledgement first
-          and we will prepare and email you the report in about 1-3 working days.
+          <strong>${escapeHtml(lead.condo)}</strong> yet. We will prepare and email you the report
+          in about 1-3 working days.
         </p>
         <p>
           To speed this up, send us the actual listing link. That lets us complete the
@@ -222,7 +222,7 @@ function infoRows(report) {
 }
 
 function whatsappLink(lead) {
-  const text = `Hi, I requested the Condo Buyability Report for ${lead.condo}. I would like to send the details to complete the price and rental analysis.`;
+  const text = `Hi, this is regarding my Buyability Report at ${lead.condo}. I would like to complete the report.\n\nThe listing URL, if any:\n\nIf not,\nBedroom type:\nFloor area:\n\nOr if I would like to compare another condo,\nCondo name:\nBedroom type:\nFloor area:`;
   return `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(text)}`;
 }
 
