@@ -101,21 +101,29 @@ async function handleSubmit(event) {
   }
 
   submitButton.disabled = true;
-  submitButton.textContent = "Sending report...";
-  setStatus("Preparing your free report and sending it to your email...", "");
+  submitButton.textContent = "Request received...";
+  setStatus("Request received. We are checking the condo and preparing the email now...", "");
+  const progressTimer = setTimeout(() => {
+    submitButton.textContent = "Emailing report...";
+    setStatus("Almost done. Your report will be sent to your email once the PDF is ready.", "");
+  }, 1800);
 
   try {
     const result = CONFIG.appsScriptUrl ? await submitToAppsScript(lead) : demoLookup(lead);
+    clearTimeout(progressTimer);
     if (result && result.ok === false) throw new Error(result.error || "Request failed");
     renderResult(lead, result);
-    submitButton.textContent = result.found ? "Report emailed" : "Request received";
+    submitButton.textContent = result.duplicate ? "Already requested" : result.found ? "Report emailed" : "Request received";
     setStatus(
-      result.found
+      result.duplicate
+        ? "This email or WhatsApp number has already requested a free report."
+        : result.found
         ? "Your PDF report has been sent to your email."
-        : "Request received. We will prepare this report manually and email you in about 1-3 working days.",
-      "success",
+        : "Request received. We will prepare this report manually and email you within 1-3 working days.",
+      result.duplicate ? "error" : "success",
     );
   } catch (error) {
+    clearTimeout(progressTimer);
     showGenericError();
     submitButton.disabled = false;
     submitButton.textContent = "Get My Free Report";
@@ -156,16 +164,29 @@ function submitToAppsScript(lead) {
 function renderResult(lead, result) {
   resultSection.hidden = false;
 
+  if (result.duplicate) {
+    document.querySelector("#resultTitle").textContent = "Report already requested";
+    reportMount.innerHTML = `
+      <div class="manual-message">
+        <p class="eyebrow">One free report per person</p>
+        <h3>You have already requested a free report before.</h3>
+        <p>Each email or WhatsApp number is entitled to one free Condo Buyability Report.</p>
+        <p>If you would like to check another condo, please contact us directly.</p>
+        <a class="whatsapp-button" href="${duplicateWhatsappLink(lead, result)}" target="_blank" rel="noreferrer">WhatsApp Us</a>
+      </div>`;
+    scrollToResult();
+    return;
+  }
+
   if (!result.found) {
     document.querySelector("#resultTitle").textContent = "Development under Review";
     reportMount.innerHTML = `
       <div class="manual-message">
         <p class="eyebrow">Development under Review</p>
-        <h3>We will prepare this report manually.</h3>
+        <h3>Thank you ${escapeHtml(lead.name)}.</h3>
         <p>
-          Thanks ${escapeHtml(lead.name)}. We do not have a completed database profile for
-          <strong>${escapeHtml(lead.condo)}</strong> yet. We will prepare and email you the report
-          in about 1-3 working days.
+          This development is currently being added to our research database. In the meantime, we will prepare
+          your report personally and email it to you within 1-3 working days.
         </p>
         <p>
           To speed this up, send us the actual listing link. That lets us complete the
@@ -223,6 +244,12 @@ function infoRows(report) {
 
 function whatsappLink(lead) {
   const text = `Hi, this is regarding my Buyability Report at ${lead.condo}. I would like to complete the report.\n\nThe listing URL, if any:\n\nIf not,\nBedroom type:\nFloor area:\n\nOr if I would like to compare another condo,\nCondo name:\nBedroom type:\nFloor area:`;
+  return `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(text)}`;
+}
+
+function duplicateWhatsappLink(lead, result) {
+  const condo = result.matchedDevelopment || lead.condo;
+  const text = `Hi, I have already downloaded your Free Buyability Report for ${condo}. I would also like to check on:\n\nCondo:\nBedroom Type:\nListing URL if any:`;
   return `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(text)}`;
 }
 
