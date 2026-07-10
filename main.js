@@ -2,7 +2,7 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "mobile-fast-get-submit-2026-07-10-v7",
+  frontendVersion: "mobile-desktop-scenario-parity-2026-07-10-v8",
 };
 
 const CONTACT_WHATSAPP_URL = `https://wa.me/${CONFIG.whatsappNumber}`;
@@ -111,15 +111,6 @@ async function handleSubmit(event) {
   const requestStartedAt = Date.now();
 
   try {
-    if (isMobileViewport()) {
-      submitButton.textContent = "Emailing report...";
-      setStatus("Sending your report request now...", "");
-      await submitViaMobileGetFallback(lead);
-      clearTimeout(progressTimer);
-      renderMobileFallbackSent(lead);
-      return;
-    }
-
     const result = CONFIG.appsScriptUrl ? await submitToAppsScript(lead) : demoLookup(lead);
     clearTimeout(progressTimer);
     if (result && result.ok === false) throw new Error(result.error || "Request failed");
@@ -136,17 +127,10 @@ async function handleSubmit(event) {
   } catch (error) {
     clearTimeout(progressTimer);
     if (shouldUseMobileFallback(error, requestStartedAt)) {
-      try {
-        submitButton.textContent = "Emailing report...";
-        setStatus("Sending your report request now...", "");
-        await submitViaMobileGetFallback(lead);
-        renderMobileFallbackSent(lead);
-      } catch (fallbackError) {
-        notifyClientError(lead, fallbackError);
-        showGenericError();
-        submitButton.disabled = false;
-        submitButton.textContent = "Get My Free Report";
-      }
+      notifyClientError(lead, error);
+      showGenericError();
+      submitButton.disabled = false;
+      submitButton.textContent = "Get My Free Report";
       return;
     }
     notifyClientError(lead, error);
@@ -195,67 +179,6 @@ function shouldUseMobileFallback(error, startedAt) {
 
 function isMobileViewport() {
   return window.matchMedia("(max-width: 760px)").matches;
-}
-
-async function submitViaMobileGetFallback(lead) {
-  const url = appsScriptUrlWithParams({
-    action: "submitLead",
-    payload: btoa(unescape(encodeURIComponent(JSON.stringify(lead)))),
-    mobileFallback: "get",
-    cacheBust: String(Date.now()),
-  });
-
-  if (window.fetch) {
-    try {
-      await fetch(url, { method: "GET", mode: "no-cors", cache: "no-store" });
-      return;
-    } catch (error) {
-      // Fall through to image beacon for mobile browsers that reject cross-origin no-cors fetch.
-    }
-  }
-
-  await imageBeacon(url);
-}
-
-function imageBeacon(url) {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    const timer = setTimeout(() => {
-      cleanup();
-      reject(new Error("Mobile fallback request timed out"));
-    }, 12000);
-    function cleanup() {
-      clearTimeout(timer);
-      image.onload = null;
-      image.onerror = null;
-    }
-    image.onload = () => {
-      cleanup();
-      resolve();
-    };
-    image.onerror = () => {
-      cleanup();
-      resolve();
-    };
-    image.src = url;
-  });
-}
-
-function renderMobileFallbackSent(lead) {
-  resultSection.hidden = false;
-  document.querySelector("#resultTitle").textContent = "Your report has been sent";
-  reportMount.innerHTML = `
-    <div class="manual-message">
-      <p class="eyebrow">Report sent</p>
-      <h3>Your Free Condo Buyability Report has been sent to your email.</h3>
-      <p>
-        Please check <strong>${escapeHtml(lead.email)}</strong>.
-      </p>
-      <a class="whatsapp-button" href="${whatsappLink(lead)}" target="_blank" rel="noreferrer">WhatsApp Us</a>
-    </div>`;
-  setStatus("Your PDF report has been sent to your email.", "success");
-  submitButton.textContent = "Report emailed";
-  scrollToResult();
 }
 
 function notifyClientError(lead, error) {
@@ -404,12 +327,6 @@ function jsonp(url, params, timeoutMs = 45000) {
     script.src = fullUrl.toString();
     document.body.appendChild(script);
   });
-}
-
-function appsScriptUrlWithParams(params) {
-  const fullUrl = new URL(CONFIG.appsScriptUrl);
-  Object.entries(params).forEach(([key, value]) => fullUrl.searchParams.set(key, value));
-  return fullUrl.toString();
 }
 
 function normalize(value) {
