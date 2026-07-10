@@ -130,6 +130,10 @@ h1 {
   max-width: 830px;
 }
 
+h1 span {
+  display: block;
+}
+
 .hero__lede {
   color: rgba(255, 255, 255, 0.82);
   font-size: 19px;
@@ -536,20 +540,27 @@ footer {
   }
 
   .hero {
-    min-height: auto;
+    background:
+      radial-gradient(circle at 12% 8%, rgba(215, 181, 109, 0.2) 0, rgba(215, 181, 109, 0) 28%),
+      radial-gradient(circle at 86% 18%, rgba(79, 118, 173, 0.36) 0, rgba(79, 118, 173, 0) 34%),
+      linear-gradient(145deg, #041236 0%, #08245f 48%, #123d82 100%);
+    min-height: 100svh;
     padding: 34px clamp(16px, 5vw, 34px);
   }
 
   .hero__copy {
     align-self: start;
+    max-width: 100%;
   }
 
   .hero__lede {
     font-size: 16px;
+    max-width: 100%;
   }
 
   .lead-form {
     align-self: start;
+    width: 100%;
   }
 
   .result-head {
@@ -575,7 +586,25 @@ footer {
 
 @media (max-width: 560px) {
   h1 {
-    font-size: clamp(52px, 15vw, 72px);
+    font-size: clamp(54px, 16vw, 76px);
+    line-height: 0.9;
+    max-width: 100%;
+  }
+
+  .hero {
+    gap: 28px;
+    padding: 36px 18px 44px;
+  }
+
+  .hero::before {
+    background-size: 34px 34px;
+    opacity: 0.5;
+  }
+
+  .hero::after {
+    left: 34%;
+    opacity: 0.22;
+    width: 58%;
   }
 
   .trust-row {
