@@ -2,7 +2,7 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "mobile-confirmed-get-submit-2026-07-10-v6",
+  frontendVersion: "mobile-fast-get-submit-2026-07-10-v7",
 };
 
 const CONTACT_WHATSAPP_URL = `https://wa.me/${CONFIG.whatsappNumber}`;
@@ -107,10 +107,19 @@ async function handleSubmit(event) {
   const progressTimer = setTimeout(() => {
     submitButton.textContent = "Emailing report...";
     setStatus("Almost done. Your report will be sent to your email once the PDF is ready.", "");
-  }, 1800);
+  }, 800);
   const requestStartedAt = Date.now();
 
   try {
+    if (isMobileViewport()) {
+      submitButton.textContent = "Emailing report...";
+      setStatus("Sending your report request now...", "");
+      await submitViaMobileGetFallback(lead);
+      clearTimeout(progressTimer);
+      renderMobileFallbackSent(lead);
+      return;
+    }
+
     const result = CONFIG.appsScriptUrl ? await submitToAppsScript(lead) : demoLookup(lead);
     clearTimeout(progressTimer);
     if (result && result.ok === false) throw new Error(result.error || "Request failed");
@@ -180,9 +189,12 @@ function submitToAppsScript(lead) {
 
 function shouldUseMobileFallback(error, startedAt) {
   const isFastFailure = Date.now() - startedAt < 6000;
-  const isMobileViewport = window.matchMedia("(max-width: 760px)").matches;
   const message = error?.message || "";
-  return isMobileViewport && (isFastFailure || message === "Request failed");
+  return isMobileViewport() && (isFastFailure || message === "Request failed");
+}
+
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 760px)").matches;
 }
 
 async function submitViaMobileGetFallback(lead) {
