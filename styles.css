@@ -144,7 +144,7 @@ h1 span {
 .trust-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   margin-top: 28px;
 }
 
@@ -152,10 +152,14 @@ h1 span {
   border: 1px solid rgba(215, 181, 109, 0.62);
   border-radius: 999px;
   color: var(--gold);
-  font-size: 13px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 12px;
   font-weight: 700;
+  justify-content: center;
   line-height: 1.15;
-  padding: 8px 12px;
+  padding: 7px 10px;
+  white-space: nowrap;
 }
 
 .lead-form {
@@ -611,12 +615,13 @@ footer {
   .trust-row {
     display: flex;
     gap: 8px;
+    justify-content: flex-start;
     margin-top: 22px;
   }
 
   .trust-row span {
-    font-size: 11px;
-    padding: 6px 9px;
+    font-size: 10.5px;
+    padding: 5px 8px;
     width: auto;
   }
 
