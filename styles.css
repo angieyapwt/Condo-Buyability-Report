@@ -66,18 +66,50 @@ button {
 }
 
 .hero {
-  background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 64%, #123d82 100%);
+  background:
+    radial-gradient(circle at 18% 12%, rgba(215, 181, 109, 0.2) 0, rgba(215, 181, 109, 0) 24%),
+    radial-gradient(circle at 78% 22%, rgba(79, 118, 173, 0.34) 0, rgba(79, 118, 173, 0) 29%),
+    linear-gradient(145deg, #041236 0%, #08245f 48%, #123d82 100%);
   color: white;
   display: grid;
   gap: 36px;
   grid-template-columns: minmax(0, 1.05fr) 430px;
   min-height: 690px;
   padding: 56px clamp(22px, 5vw, 72px);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+  background-size: 42px 42px;
+  content: "";
+  inset: 0;
+  opacity: 0.42;
+  pointer-events: none;
+  position: absolute;
+}
+
+.hero::after {
+  background: linear-gradient(110deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0));
+  content: "";
+  height: 140%;
+  left: 54%;
+  opacity: 0.18;
+  pointer-events: none;
+  position: absolute;
+  top: -20%;
+  transform: rotate(10deg);
+  width: 28%;
 }
 
 .hero__copy {
   align-self: center;
   max-width: 760px;
+  position: relative;
+  z-index: 1;
 }
 
 .eyebrow {
@@ -90,6 +122,7 @@ button {
 }
 
 h1 {
+  display: grid;
   font-size: clamp(42px, 7vw, 84px);
   letter-spacing: 0;
   line-height: 0.98;
@@ -130,6 +163,8 @@ h1 {
   display: grid;
   gap: 14px;
   padding: 24px;
+  position: relative;
+  z-index: 1;
 }
 
 .form-head h2,
@@ -540,7 +575,7 @@ footer {
 
 @media (max-width: 560px) {
   h1 {
-    font-size: 40px;
+    font-size: clamp(52px, 15vw, 72px);
   }
 
   .trust-row {

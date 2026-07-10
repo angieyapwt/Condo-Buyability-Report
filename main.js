@@ -119,7 +119,7 @@ async function handleSubmit(event) {
         ? "This email or WhatsApp number has already requested a free report."
         : result.found
         ? "Your PDF report has been sent to your email."
-        : "Request received. We will prepare this report manually and email you within 1-3 working days.",
+        : "Request received. We will prepare this report manually and email you within 1–3 working days.",
       result.duplicate ? "error" : "success",
     );
   } catch (error) {
@@ -186,11 +186,7 @@ function renderResult(lead, result) {
         <h3>Thank you ${escapeHtml(lead.name)}.</h3>
         <p>
           This development is currently being added to our research database. In the meantime, we will prepare
-          your report personally and email it to you within 1-3 working days.
-        </p>
-        <p>
-          To speed this up, send us the actual listing link. That lets us complete the
-          entry PSF, price percentile, rental yield and rentability sections with current listing data.
+          your report personally and email it to you within 1–3 working days.
         </p>
         <a class="whatsapp-button" href="${whatsappLink(lead)}" target="_blank" rel="noreferrer">WhatsApp Us for faster response</a>
       </div>`;
