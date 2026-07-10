@@ -2,7 +2,7 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "mobile-post-submit-2026-07-10-v5",
+  frontendVersion: "mobile-confirmed-get-submit-2026-07-10-v6",
 };
 
 const CONTACT_WHATSAPP_URL = `https://wa.me/${CONFIG.whatsappNumber}`;
@@ -127,8 +127,17 @@ async function handleSubmit(event) {
   } catch (error) {
     clearTimeout(progressTimer);
     if (shouldUseMobileFallback(error, requestStartedAt)) {
-      submitViaPostFallback(lead);
-      renderMobilePostSent(lead);
+      try {
+        submitButton.textContent = "Emailing report...";
+        setStatus("Sending your report request now...", "");
+        await submitViaMobileGetFallback(lead);
+        renderMobileFallbackSent(lead);
+      } catch (fallbackError) {
+        notifyClientError(lead, fallbackError);
+        showGenericError();
+        submitButton.disabled = false;
+        submitButton.textContent = "Get My Free Report";
+      }
       return;
     }
     notifyClientError(lead, error);
@@ -176,39 +185,51 @@ function shouldUseMobileFallback(error, startedAt) {
   return isMobileViewport && (isFastFailure || message === "Request failed");
 }
 
-function submitViaPostFallback(lead) {
-  const iframe = document.createElement("iframe");
-  const targetName = `condoFallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-  iframe.name = targetName;
-  iframe.style.display = "none";
+async function submitViaMobileGetFallback(lead) {
+  const url = appsScriptUrlWithParams({
+    action: "submitLead",
+    payload: btoa(unescape(encodeURIComponent(JSON.stringify(lead)))),
+    mobileFallback: "get",
+    cacheBust: String(Date.now()),
+  });
 
-  const form = document.createElement("form");
-  form.action = CONFIG.appsScriptUrl;
-  form.method = "POST";
-  form.target = targetName;
-  form.style.display = "none";
-  addHiddenInput(form, "action", "submitLead");
-  addHiddenInput(form, "payload", btoa(unescape(encodeURIComponent(JSON.stringify(lead)))));
-  addHiddenInput(form, "mobileFallback", "1");
+  if (window.fetch) {
+    try {
+      await fetch(url, { method: "GET", mode: "no-cors", cache: "no-store" });
+      return;
+    } catch (error) {
+      // Fall through to image beacon for mobile browsers that reject cross-origin no-cors fetch.
+    }
+  }
 
-  document.body.appendChild(iframe);
-  document.body.appendChild(form);
-  form.submit();
-  setTimeout(() => {
-    iframe.remove();
-    form.remove();
-  }, 120000);
+  await imageBeacon(url);
 }
 
-function addHiddenInput(form, name, value) {
-  const input = document.createElement("input");
-  input.type = "hidden";
-  input.name = name;
-  input.value = value;
-  form.appendChild(input);
+function imageBeacon(url) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error("Mobile fallback request timed out"));
+    }, 12000);
+    function cleanup() {
+      clearTimeout(timer);
+      image.onload = null;
+      image.onerror = null;
+    }
+    image.onload = () => {
+      cleanup();
+      resolve();
+    };
+    image.onerror = () => {
+      cleanup();
+      resolve();
+    };
+    image.src = url;
+  });
 }
 
-function renderMobilePostSent(lead) {
+function renderMobileFallbackSent(lead) {
   resultSection.hidden = false;
   document.querySelector("#resultTitle").textContent = "Your report has been sent";
   reportMount.innerHTML = `
@@ -371,6 +392,12 @@ function jsonp(url, params, timeoutMs = 45000) {
     script.src = fullUrl.toString();
     document.body.appendChild(script);
   });
+}
+
+function appsScriptUrlWithParams(params) {
+  const fullUrl = new URL(CONFIG.appsScriptUrl);
+  Object.entries(params).forEach(([key, value]) => fullUrl.searchParams.set(key, value));
+  return fullUrl.toString();
 }
 
 function normalize(value) {
