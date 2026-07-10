@@ -124,6 +124,7 @@ async function handleSubmit(event) {
     );
   } catch (error) {
     clearTimeout(progressTimer);
+    notifyClientError(lead, error);
     showGenericError();
     submitButton.disabled = false;
     submitButton.textContent = "Get My Free Report";
@@ -158,7 +159,18 @@ function submitToAppsScript(lead) {
   return jsonp(CONFIG.appsScriptUrl, {
     action: "submitLead",
     payload: btoa(unescape(encodeURIComponent(JSON.stringify(lead)))),
-  });
+  }, 120000);
+}
+
+function notifyClientError(lead, error) {
+  if (!CONFIG.appsScriptUrl) return;
+  jsonp(CONFIG.appsScriptUrl, {
+    action: "clientError",
+    payload: btoa(unescape(encodeURIComponent(JSON.stringify(lead)))),
+    error: error?.message || "Unknown web app error",
+    userAgent: navigator.userAgent || "",
+    pageUrl: window.location.href,
+  }, 20000).catch(() => {});
 }
 
 function renderResult(lead, result) {
@@ -269,7 +281,7 @@ function scrollToResult() {
   resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function jsonp(url, params) {
+function jsonp(url, params, timeoutMs = 45000) {
   return new Promise((resolve, reject) => {
     const callback = `condoScorecard_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const script = document.createElement("script");
@@ -279,7 +291,7 @@ function jsonp(url, params) {
     const timer = setTimeout(() => {
       cleanup();
       reject(new Error("Request timed out"));
-    }, 45000);
+    }, timeoutMs);
     function cleanup() {
       clearTimeout(timer);
       delete window[callback];

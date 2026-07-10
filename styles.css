@@ -154,7 +154,8 @@ h1 span {
   color: var(--gold);
   font-size: 13px;
   font-weight: 700;
-  padding: 10px 14px;
+  line-height: 1.15;
+  padding: 8px 12px;
 }
 
 .lead-form {
@@ -608,11 +609,17 @@ footer {
   }
 
   .trust-row {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    gap: 8px;
+    margin-top: 22px;
   }
 
-  .trust-row span,
+  .trust-row span {
+    font-size: 11px;
+    padding: 6px 9px;
+    width: auto;
+  }
+
   button,
   .whatsapp-button {
     width: 100%;
