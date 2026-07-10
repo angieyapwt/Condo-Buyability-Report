@@ -2,7 +2,7 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "mobile-iframe-fallback-2026-07-10-v4",
+  frontendVersion: "mobile-post-submit-2026-07-10-v5",
 };
 
 const CONTACT_WHATSAPP_URL = `https://wa.me/${CONFIG.whatsappNumber}`;
@@ -127,22 +127,8 @@ async function handleSubmit(event) {
   } catch (error) {
     clearTimeout(progressTimer);
     if (shouldUseMobileFallback(error, requestStartedAt)) {
-      submitViaIframeFallback(lead);
-      resultSection.hidden = false;
-      document.querySelector("#resultTitle").textContent = "Request received";
-      reportMount.innerHTML = `
-        <div class="manual-message">
-          <p class="eyebrow">Report request</p>
-          <h3>Your request has been received.</h3>
-          <p>
-            Your mobile browser may take a little longer to complete the report request.
-            Please check your email shortly. If nothing arrives, contact us on WhatsApp and we will help from there.
-          </p>
-          <a class="whatsapp-button" href="${errorWhatsappLink()}" target="_blank" rel="noreferrer">WhatsApp Us</a>
-        </div>`;
-      setStatus("Request received. Please check your email shortly.", "success");
-      submitButton.textContent = "Request received";
-      scrollToResult();
+      submitViaPostFallback(lead);
+      renderMobilePostSent(lead);
       return;
     }
     notifyClientError(lead, error);
@@ -190,17 +176,53 @@ function shouldUseMobileFallback(error, startedAt) {
   return isMobileViewport && (isFastFailure || message === "Request failed");
 }
 
-function submitViaIframeFallback(lead) {
+function submitViaPostFallback(lead) {
   const iframe = document.createElement("iframe");
-  iframe.name = `condoFallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  const targetName = `condoFallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  iframe.name = targetName;
   iframe.style.display = "none";
-  iframe.src = appsScriptUrlWithParams({
-    action: "submitLead",
-    payload: btoa(unescape(encodeURIComponent(JSON.stringify(lead)))),
-    mobileFallback: "1",
-  });
+
+  const form = document.createElement("form");
+  form.action = CONFIG.appsScriptUrl;
+  form.method = "POST";
+  form.target = targetName;
+  form.style.display = "none";
+  addHiddenInput(form, "action", "submitLead");
+  addHiddenInput(form, "payload", btoa(unescape(encodeURIComponent(JSON.stringify(lead)))));
+  addHiddenInput(form, "mobileFallback", "1");
+
   document.body.appendChild(iframe);
-  setTimeout(() => iframe.remove(), 120000);
+  document.body.appendChild(form);
+  form.submit();
+  setTimeout(() => {
+    iframe.remove();
+    form.remove();
+  }, 120000);
+}
+
+function addHiddenInput(form, name, value) {
+  const input = document.createElement("input");
+  input.type = "hidden";
+  input.name = name;
+  input.value = value;
+  form.appendChild(input);
+}
+
+function renderMobilePostSent(lead) {
+  resultSection.hidden = false;
+  document.querySelector("#resultTitle").textContent = "Your report has been sent";
+  reportMount.innerHTML = `
+    <div class="manual-message">
+      <p class="eyebrow">Report sent</p>
+      <h3>Your Free Condo Buyability Report has been sent to your email.</h3>
+      <p>
+        Please check <strong>${escapeHtml(lead.email)}</strong>.
+      </p>
+      <a class="whatsapp-button" href="${whatsappLink(lead)}" target="_blank" rel="noreferrer">WhatsApp Us</a>
+    </div>`;
+  setStatus("Your PDF report has been sent to your email.", "success");
+  submitButton.textContent = "Report emailed";
+  scrollToResult();
 }
 
 function notifyClientError(lead, error) {
@@ -349,12 +371,6 @@ function jsonp(url, params, timeoutMs = 45000) {
     script.src = fullUrl.toString();
     document.body.appendChild(script);
   });
-}
-
-function appsScriptUrlWithParams(params) {
-  const fullUrl = new URL(CONFIG.appsScriptUrl);
-  Object.entries(params).forEach(([key, value]) => fullUrl.searchParams.set(key, value));
-  return fullUrl.toString();
 }
 
 function normalize(value) {
