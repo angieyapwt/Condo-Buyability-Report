@@ -73,7 +73,7 @@ button {
   color: white;
   display: grid;
   column-gap: 34px;
-  grid-template-columns: minmax(0, 0.95fr) minmax(360px, 600px);
+  grid-template-columns: minmax(0, 0.95fr) minmax(320px, 420px);
   row-gap: 34px;
   min-height: 690px;
   padding: 56px clamp(22px, 5vw, 72px);
@@ -167,7 +167,7 @@ h1 span {
   align-self: center;
   justify-self: center;
   margin: 0;
-  max-width: 600px;
+  max-width: 420px;
   position: relative;
   width: 100%;
   z-index: 1;
