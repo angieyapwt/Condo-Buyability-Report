@@ -123,9 +123,9 @@ button {
 
 h1 {
   display: grid;
-  font-size: clamp(42px, 7vw, 84px);
+  font-size: clamp(40px, 6.2vw, 78px);
   letter-spacing: 0;
-  line-height: 0.98;
+  line-height: 1;
   margin: 0;
   max-width: 830px;
 }
@@ -591,8 +591,8 @@ footer {
 
 @media (max-width: 560px) {
   h1 {
-    font-size: clamp(54px, 16vw, 76px);
-    line-height: 0.9;
+    font-size: clamp(38px, 11.6vw, 50px);
+    line-height: 0.96;
     max-width: 100%;
   }
 
