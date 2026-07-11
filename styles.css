@@ -72,8 +72,8 @@ button {
     linear-gradient(145deg, #041236 0%, #08245f 48%, #123d82 100%);
   color: white;
   display: grid;
-  column-gap: 46px;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 430px);
+  column-gap: 34px;
+  grid-template-columns: minmax(0, 0.95fr) minmax(360px, 520px);
   row-gap: 34px;
   min-height: 690px;
   padding: 56px clamp(22px, 5vw, 72px);
@@ -167,7 +167,7 @@ h1 span {
   align-self: center;
   justify-self: center;
   margin: 0;
-  max-width: 430px;
+  max-width: 520px;
   position: relative;
   width: 100%;
   z-index: 1;
@@ -201,7 +201,7 @@ h1 span {
   gap: 14px;
   grid-column: 1 / -1;
   justify-self: center;
-  max-width: 520px;
+  max-width: 640px;
   padding: 24px;
   position: relative;
   width: 100%;
