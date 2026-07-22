@@ -2,7 +2,7 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "pre-today-submit-restore-2026-07-22-v33",
+  frontendVersion: "post-fallback-mobile-count-2026-07-22-v34",
   defaultReportCount: 183,
 };
 
@@ -119,17 +119,6 @@ function resolveReportCountTarget() {
     return Promise.resolve(reportCountTarget);
   }
 
-  if (isMobileViewport()) {
-    reportCountResolved = true;
-    window.setTimeout(() => {
-      if (isSubmitting) return;
-      fetchReportCountTarget().then((count) => {
-        if (Number(count) > displayedReportCount) animateReportCount(count);
-      });
-    }, 30000);
-    return Promise.resolve(reportCountTarget);
-  }
-
   return fetchReportCountTarget();
 }
 
@@ -241,7 +230,7 @@ async function handleSubmit(event) {
   submitButton.disabled = true;
   isSubmitting = true;
   submitButton.textContent = "Sending report...";
-  setStatus("Preparing your free report and sending it to your email...", "");
+  setStatus("Preparing your free report and sending it to your email...\nThis usually takes less than 20 seconds. Please do not refresh or go back.", "");
 
   try {
     const result = CONFIG.appsScriptUrl ? await submitToAppsScript(lead) : demoLookup(lead);
@@ -256,8 +245,22 @@ async function handleSubmit(event) {
         : "Request received. We will prepare this report manually and email you within 1–3 working days.",
       result.duplicate ? "error" : "success",
     );
+    if (!result.duplicate) incrementVisibleReportCount();
   } catch (error) {
-    showGenericError();
+    if (CONFIG.appsScriptUrl) {
+      try {
+        submitToAppsScriptPostFallback(lead);
+        renderFallbackReceived(lead);
+        submitButton.textContent = "Request sent";
+        setStatus("Your request has been sent. Please check your email shortly.", "success");
+        incrementVisibleReportCount();
+        return;
+      } catch (fallbackError) {
+        notifyClientError(lead, fallbackError);
+      }
+    }
+    notifyClientError(lead, error);
+    showGenericError(error);
     submitButton.disabled = false;
     submitButton.textContent = "Get My Instant Report";
   } finally {
@@ -296,6 +299,22 @@ function submitToAppsScript(lead) {
   }, 45000);
 }
 
+function submitToAppsScriptPostFallback(lead) {
+  const fullUrl = new URL(CONFIG.appsScriptUrl);
+  fullUrl.searchParams.set("action", "submitLead");
+  fullUrl.searchParams.set("payload", encodePayload(lead));
+  fullUrl.searchParams.set("fallback", "image-beacon");
+  fullUrl.searchParams.set("v", CONFIG.frontendVersion);
+  fullUrl.searchParams.set("t", String(Date.now()));
+
+  const img = new Image();
+  img.alt = "";
+  img.style.display = "none";
+  img.src = fullUrl.toString();
+  document.body.appendChild(img);
+  window.setTimeout(() => img.remove(), 120000);
+}
+
 function encodePayload(lead) {
   return btoa(unescape(encodeURIComponent(JSON.stringify(lead))));
 }
@@ -313,6 +332,31 @@ function notifyClientError(lead, error) {
     userAgent: navigator.userAgent || "",
     pageUrl: window.location.href,
   }, 20000).catch(() => {});
+}
+
+function incrementVisibleReportCount() {
+  if (!reportCountEl) return;
+  const current = Number(String(reportCountEl.textContent || "").replace(/\D/g, ""));
+  const next = Math.max(Number.isFinite(current) ? current + 1 : 0, displayedReportCount + 1, CONFIG.defaultReportCount + 1);
+  displayedReportCount = next;
+  reportCountTarget = Math.max(reportCountTarget, next);
+  reportCountEl.textContent = next.toLocaleString("en-SG");
+}
+
+function renderFallbackReceived(lead) {
+  resultSection.hidden = false;
+  document.querySelector("#resultTitle").textContent = "Request sent";
+  reportMount.innerHTML = `
+    <div class="manual-message">
+      <p class="eyebrow">Report request</p>
+      <h3>Your request has been sent.</h3>
+      <p>
+        Please check <strong>${escapeHtml(lead.email)}</strong> shortly. The report usually takes less than 20 seconds
+        to prepare and send.
+      </p>
+      <a class="whatsapp-button" href="${whatsappLink(lead)}" target="_blank" rel="noreferrer">WhatsApp Us</a>
+    </div>`;
+  scrollToResult();
 }
 
 function renderResult(lead, result) {
@@ -361,7 +405,7 @@ function renderResult(lead, result) {
   scrollToResult();
 }
 
-function showGenericError() {
+function showGenericError(error) {
   const message = "We could not generate the report at the moment. Please contact us directly on WhatsApp and we will help you from there.";
   setStatus(message, "error");
   resultSection.hidden = false;
@@ -371,6 +415,7 @@ function showGenericError() {
       <p class="eyebrow">Report request</p>
       <h3>We could not generate the report at the moment.</h3>
       <p>Please contact us directly on WhatsApp and we will help you from there.</p>
+      ${error ? `<p class="error-detail">Error detail: ${escapeHtml(error.message || "Request failed")}</p>` : ""}
       <a class="whatsapp-button" href="${errorWhatsappLink()}" target="_blank" rel="noreferrer">WhatsApp Us</a>
     </div>`;
   scrollToResult();

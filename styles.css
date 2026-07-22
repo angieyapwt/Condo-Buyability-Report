@@ -361,6 +361,10 @@ input:focus {
   margin: 0;
 }
 
+.form-status {
+  white-space: pre-line;
+}
+
 .form-status.error {
   color: var(--red);
   font-weight: 800;
