@@ -2,7 +2,7 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "preview-count-ticker-mobile-2026-07-22-v18",
+  frontendVersion: "count-up-mobile-center-2026-07-22-v19",
   defaultReportCount: 153,
 };
 
@@ -85,6 +85,7 @@ const reportMount = document.querySelector("#reportMount");
 const suggestions = document.querySelector("#condoSuggestions");
 const submitButton = form.querySelector('button[type="submit"]');
 const reportCountEl = document.querySelector("#reportCount");
+let displayedReportCount = 0;
 
 function init() {
   suggestions.innerHTML = "";
@@ -94,17 +95,47 @@ function init() {
 
 async function loadReportStats() {
   if (!reportCountEl) return;
-  reportCountEl.textContent = String(CONFIG.defaultReportCount);
+  animateReportCount(CONFIG.defaultReportCount);
   if (!CONFIG.appsScriptUrl) return;
   try {
     const stats = await jsonp(CONFIG.appsScriptUrl, { action: "publicStats" }, 12000);
     const count = Number(stats?.reportsRequested);
     if (Number.isFinite(count) && count >= CONFIG.defaultReportCount) {
-      reportCountEl.textContent = count.toLocaleString("en-SG");
+      animateReportCount(count);
     }
   } catch (error) {
-    reportCountEl.textContent = String(CONFIG.defaultReportCount);
+    animateReportCount(CONFIG.defaultReportCount);
   }
+}
+
+function animateReportCount(target) {
+  if (!reportCountEl) return;
+  const finalValue = Math.max(CONFIG.defaultReportCount, Math.round(Number(target) || CONFIG.defaultReportCount));
+  const startValue = displayedReportCount || 0;
+  if (startValue === finalValue) {
+    reportCountEl.textContent = finalValue.toLocaleString("en-SG");
+    return;
+  }
+
+  const durationMs = 900;
+  const startedAt = performance.now();
+
+  function tick(now) {
+    const progress = Math.min(1, (now - startedAt) / durationMs);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const value = Math.round(startValue + (finalValue - startValue) * eased);
+    reportCountEl.textContent = value.toLocaleString("en-SG");
+
+    if (progress < 1) {
+      requestAnimationFrame(tick);
+      return;
+    }
+
+    displayedReportCount = finalValue;
+    reportCountEl.textContent = finalValue.toLocaleString("en-SG");
+  }
+
+  requestAnimationFrame(tick);
 }
 
 async function handleSubmit(event) {

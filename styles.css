@@ -22,6 +22,7 @@ body {
   background: var(--soft);
   color: var(--ink);
   font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
@@ -79,6 +80,7 @@ button {
   padding: 56px clamp(22px, 5vw, 72px);
   position: relative;
   overflow: hidden;
+  width: 100%;
 }
 
 .hero::before {
@@ -109,6 +111,7 @@ button {
 .hero__copy {
   align-self: center;
   max-width: 760px;
+  min-width: 0;
   position: relative;
   z-index: 1;
 }
@@ -167,9 +170,11 @@ h1 span {
   border-top: 1px solid rgba(255, 255, 255, 0.18);
   margin-top: 22px;
   max-width: 760px;
+  min-width: 0;
   overflow: hidden;
   padding-top: 18px;
   position: relative;
+  width: 100%;
 }
 
 .credibility-ticker::before,
@@ -197,11 +202,14 @@ h1 span {
   animation: tickerScroll 24s linear infinite;
   display: flex;
   gap: 42px;
+  min-width: max-content;
+  will-change: transform;
   width: max-content;
 }
 
 .ticker-track span {
   color: #ffffff;
+  flex: 0 0 auto;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.03em;
@@ -224,6 +232,7 @@ h1 span {
   justify-self: center;
   margin: 0;
   max-width: 420px;
+  min-width: 0;
   position: relative;
   width: 100%;
   z-index: 1;
@@ -251,18 +260,36 @@ h1 span {
 }
 
 .preview-count {
+  align-items: center;
   border: 1px solid rgba(215, 181, 109, 0.62);
   border-radius: 999px;
   color: var(--gold);
   display: flex;
+  flex-direction: column;
   font-size: 12px;
   font-weight: 800;
+  gap: 3px;
   justify-content: center;
   line-height: 1.15;
   margin: 12px auto 0;
-  max-width: max-content;
-  padding: 8px 11px;
-  white-space: nowrap;
+  max-width: 220px;
+  min-height: 58px;
+  padding: 8px 18px;
+  text-align: center;
+  width: fit-content;
+}
+
+.preview-count span {
+  display: block;
+  font-size: 23px;
+  line-height: 1;
+}
+
+.preview-count small {
+  display: block;
+  font-size: 11px;
+  line-height: 1.15;
+  text-transform: uppercase;
 }
 
 .lead-form {
@@ -277,6 +304,7 @@ h1 span {
   grid-column: 1 / -1;
   justify-self: center;
   max-width: 580px;
+  min-width: 0;
   padding: 24px;
   position: relative;
   width: 100%;
@@ -709,6 +737,7 @@ footer {
   .hero {
     gap: 28px;
     padding: 36px 18px 44px;
+    width: 100%;
   }
 
   .hero::before {
@@ -737,6 +766,7 @@ footer {
 
   .credibility-ticker {
     margin-top: 18px;
+    max-width: calc(100vw - 36px);
     padding-top: 16px;
   }
 
@@ -766,6 +796,11 @@ footer {
 
   .hero__preview {
     max-width: 360px;
+    width: 100%;
+  }
+
+  .preview-count {
+    max-width: 210px;
   }
 
   .hero__preview figcaption {
