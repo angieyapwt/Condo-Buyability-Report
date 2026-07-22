@@ -272,7 +272,7 @@ h1 span {
   justify-content: center;
   line-height: 1.15;
   margin: 12px auto 0;
-  max-width: 220px;
+  max-width: 280px;
   min-height: 58px;
   padding: 8px 18px;
   text-align: center;
@@ -290,6 +290,7 @@ h1 span {
   font-size: 11px;
   line-height: 1.15;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .lead-form {
