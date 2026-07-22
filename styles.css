@@ -201,7 +201,7 @@ h1 span {
 }
 
 .ticker-track span {
-  color: var(--gold);
+  color: #ffffff;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.03em;
@@ -244,6 +244,25 @@ h1 span {
   line-height: 1.55;
   margin-top: 14px;
   text-align: center;
+}
+
+.hero__preview figcaption span {
+  display: block;
+}
+
+.preview-count {
+  border: 1px solid rgba(215, 181, 109, 0.62);
+  border-radius: 999px;
+  color: var(--gold);
+  display: flex;
+  font-size: 12px;
+  font-weight: 800;
+  justify-content: center;
+  line-height: 1.15;
+  margin: 12px auto 0;
+  max-width: max-content;
+  padding: 8px 11px;
+  white-space: nowrap;
 }
 
 .lead-form {
@@ -728,7 +747,7 @@ footer {
   }
 
   .ticker-track {
-    animation-duration: 20s;
+    animation: tickerScroll 18s linear infinite;
   }
 
   .ticker-track span {

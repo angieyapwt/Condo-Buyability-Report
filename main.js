@@ -2,8 +2,8 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "ticker-report-count-2026-07-22-v17",
-  defaultReportCount: 140,
+  frontendVersion: "preview-count-ticker-mobile-2026-07-22-v18",
+  defaultReportCount: 153,
 };
 
 const CONTACT_WHATSAPP_URL = `https://wa.me/${CONFIG.whatsappNumber}`;
