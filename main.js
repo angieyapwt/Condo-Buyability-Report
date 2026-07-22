@@ -2,8 +2,8 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "mobile-nocors-appscript-submit-2026-07-22-v35",
-  defaultReportCount: 183,
+  frontendVersion: "appscript-postmessage-bridge-2026-07-22-v37",
+  defaultReportCount: 153,
 };
 
 const CONTACT_WHATSAPP_URL = `https://wa.me/${CONFIG.whatsappNumber}`;
@@ -123,7 +123,11 @@ function resolveReportCountTarget() {
 }
 
 function fetchReportCountTarget() {
-  return jsonp(CONFIG.appsScriptUrl, { action: "publicStats" }, 45000)
+  const statsRequest = isMobileViewport()
+    ? appsScriptBridge("bridgePublicStats", {}, "GET", 45000)
+    : jsonp(CONFIG.appsScriptUrl, { action: "publicStats" }, 45000);
+
+  return statsRequest
     .then((stats) => {
       const count = Number(stats?.reportsRequested);
       if (Number.isFinite(count) && count >= CONFIG.defaultReportCount) {
@@ -234,11 +238,19 @@ async function handleSubmit(event) {
 
   try {
     if (CONFIG.appsScriptUrl && isMobileViewport()) {
-      await submitToAppsScriptNoCors(lead);
-      renderMobileRequestSent(lead);
-      submitButton.textContent = "Request sent";
-      setStatus("Your request has been sent. Please check your email shortly.", "success");
-      incrementVisibleReportCount();
+      const result = await submitToAppsScriptBridge(lead);
+      if (result && result.ok === false) throw new Error(result.error || "Request failed");
+      renderResult(lead, result);
+      submitButton.textContent = result.duplicate ? "Already requested" : result.found ? "Report emailed" : "Request received";
+      setStatus(
+        result.duplicate
+          ? "This email or WhatsApp number has already requested a free report."
+          : result.found
+          ? "Your PDF report has been sent to your email."
+          : "Request received. We will prepare this report manually and email you within 1–3 working days.",
+        result.duplicate ? "error" : "success",
+      );
+      if (!result.duplicate) incrementVisibleReportCount();
       return;
     }
 
@@ -260,8 +272,8 @@ async function handleSubmit(event) {
       try {
         submitToAppsScriptPostFallback(lead);
         renderFallbackReceived(lead);
-        submitButton.textContent = "Request sent";
-        setStatus("Your request has been sent. Please check your email shortly.", "success");
+        submitButton.textContent = "Report emailed";
+        setStatus("Your PDF report has been sent to your email.", "success");
         incrementVisibleReportCount();
         return;
       } catch (fallbackError) {
@@ -306,6 +318,14 @@ function submitToAppsScript(lead) {
     action: "submitLead",
     payload: encodePayload(lead),
   }, 45000);
+}
+
+function submitToAppsScriptBridge(lead) {
+  return appsScriptBridge("bridgeSubmitLead", {
+    payload: encodePayload(lead),
+    submitMode: "postmessage-bridge",
+    v: CONFIG.frontendVersion,
+  }, "POST", 60000);
 }
 
 async function submitToAppsScriptNoCors(lead) {
@@ -366,24 +386,21 @@ function incrementVisibleReportCount() {
   reportCountEl.textContent = next.toLocaleString("en-SG");
 }
 
-function renderMobileRequestSent(lead) {
+function renderMobileReportSent(lead) {
   resultSection.hidden = false;
-  document.querySelector("#resultTitle").textContent = "Request sent";
+  document.querySelector("#resultTitle").textContent = "Your report has been sent";
   reportMount.innerHTML = `
     <div class="manual-message">
-      <p class="eyebrow">Report request</p>
-      <h3>Your request has been sent.</h3>
-      <p>
-        Please check <strong>${escapeHtml(lead.email)}</strong> shortly. The report usually takes less than 20 seconds
-        to prepare and send. If the development is still under review, we will email you separately within 1–3 working days.
-      </p>
+      <p class="eyebrow">Report sent</p>
+      <h3>Your Free Condo Buyability Report has been sent to your email.</h3>
+      <p>Please check <strong>${escapeHtml(lead.email)}</strong>.</p>
       <a class="whatsapp-button" href="${whatsappLink(lead)}" target="_blank" rel="noreferrer">WhatsApp Us</a>
     </div>`;
   scrollToResult();
 }
 
 function renderFallbackReceived(lead) {
-  renderMobileRequestSent(lead);
+  renderMobileReportSent(lead);
 }
 
 function renderResult(lead, result) {
@@ -493,6 +510,65 @@ function setNode(root, field, value) {
 
 function scrollToResult() {
   resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function appsScriptBridge(action, params = {}, method = "GET", timeoutMs = 60000) {
+  return new Promise((resolve, reject) => {
+    const requestId = `bridge_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const frameName = `appsScriptBridge_${requestId}`;
+    const iframe = document.createElement("iframe");
+    let form = null;
+    let timeout = null;
+
+    function cleanup() {
+      window.removeEventListener("message", onMessage);
+      if (timeout) window.clearTimeout(timeout);
+      if (form) form.remove();
+      iframe.remove();
+    }
+
+    function onMessage(event) {
+      const data = event.data || {};
+      if (data.source !== "condoBuyabilityAppsScriptBridge" || data.requestId !== requestId) return;
+      cleanup();
+      resolve(data);
+    }
+
+    iframe.name = frameName;
+    iframe.title = "Apps Script response bridge";
+    iframe.style.display = "none";
+    document.body.appendChild(iframe);
+    window.addEventListener("message", onMessage);
+
+    timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("Apps Script response timed out."));
+    }, timeoutMs);
+
+    const fields = {
+      ...params,
+      action,
+      bridgeRequestId: requestId,
+      bridgeOrigin: window.location.origin,
+    };
+
+    form = document.createElement("form");
+    form.method = method.toUpperCase() === "POST" ? "POST" : "GET";
+    form.action = CONFIG.appsScriptUrl;
+    form.target = frameName;
+    form.style.display = "none";
+
+    Object.entries(fields).forEach(([key, value]) => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = key;
+      input.value = value == null ? "" : String(value);
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+  });
 }
 
 function jsonp(url, params, timeoutMs = 45000) {
