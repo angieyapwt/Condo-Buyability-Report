@@ -2,7 +2,7 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "single-countup-target-2026-07-22-v21",
+  frontendVersion: "instant-live-countup-2026-07-22-v22",
   defaultReportCount: 153,
 };
 
@@ -97,23 +97,20 @@ function init() {
 async function loadReportStats() {
   if (!reportCountEl) return;
   reportCountEl.textContent = "0";
-  let targetCount = CONFIG.defaultReportCount;
+  displayedReportCount = 0;
+  animateReportCount(CONFIG.defaultReportCount);
   if (!CONFIG.appsScriptUrl) {
-    animateReportCount(targetCount);
     return;
   }
 
-  try {
-    const stats = await jsonp(CONFIG.appsScriptUrl, { action: "publicStats" }, 4500);
-    const count = Number(stats?.reportsRequested);
-    if (Number.isFinite(count) && count >= CONFIG.defaultReportCount) {
-      targetCount = count;
-    }
-  } catch (error) {
-    targetCount = CONFIG.defaultReportCount;
-  }
-
-  animateReportCount(targetCount);
+  jsonp(CONFIG.appsScriptUrl, { action: "publicStats" }, 8000)
+    .then((stats) => {
+      const count = Number(stats?.reportsRequested);
+      if (Number.isFinite(count) && count >= CONFIG.defaultReportCount) {
+        animateReportCount(count);
+      }
+    })
+    .catch(() => {});
 }
 
 function animateReportCount(target) {
@@ -137,6 +134,7 @@ function animateReportCount(target) {
     const progress = Math.min(1, (now - startedAt) / durationMs);
     const eased = 1 - Math.pow(1 - progress, 3);
     const value = Math.round(startValue + (finalValue - startValue) * eased);
+    displayedReportCount = value;
     reportCountEl.textContent = value.toLocaleString("en-SG");
 
     if (progress < 1) {
