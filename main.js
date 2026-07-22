@@ -2,7 +2,7 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "desktop-count-label-one-line-2026-07-22-v20",
+  frontendVersion: "single-countup-target-2026-07-22-v21",
   defaultReportCount: 153,
 };
 
@@ -86,6 +86,7 @@ const suggestions = document.querySelector("#condoSuggestions");
 const submitButton = form.querySelector('button[type="submit"]');
 const reportCountEl = document.querySelector("#reportCount");
 let displayedReportCount = 0;
+let reportCountTimer = null;
 
 function init() {
   suggestions.innerHTML = "";
@@ -95,21 +96,33 @@ function init() {
 
 async function loadReportStats() {
   if (!reportCountEl) return;
-  animateReportCount(CONFIG.defaultReportCount);
-  if (!CONFIG.appsScriptUrl) return;
+  reportCountEl.textContent = "0";
+  let targetCount = CONFIG.defaultReportCount;
+  if (!CONFIG.appsScriptUrl) {
+    animateReportCount(targetCount);
+    return;
+  }
+
   try {
-    const stats = await jsonp(CONFIG.appsScriptUrl, { action: "publicStats" }, 12000);
+    const stats = await jsonp(CONFIG.appsScriptUrl, { action: "publicStats" }, 4500);
     const count = Number(stats?.reportsRequested);
     if (Number.isFinite(count) && count >= CONFIG.defaultReportCount) {
-      animateReportCount(count);
+      targetCount = count;
     }
   } catch (error) {
-    animateReportCount(CONFIG.defaultReportCount);
+    targetCount = CONFIG.defaultReportCount;
   }
+
+  animateReportCount(targetCount);
 }
 
 function animateReportCount(target) {
   if (!reportCountEl) return;
+  if (reportCountTimer) {
+    clearInterval(reportCountTimer);
+    reportCountTimer = null;
+  }
+
   const finalValue = Math.max(CONFIG.defaultReportCount, Math.round(Number(target) || CONFIG.defaultReportCount));
   const startValue = displayedReportCount || 0;
   if (startValue === finalValue) {
@@ -127,15 +140,17 @@ function animateReportCount(target) {
     reportCountEl.textContent = value.toLocaleString("en-SG");
 
     if (progress < 1) {
-      requestAnimationFrame(tick);
       return;
     }
 
+    clearInterval(reportCountTimer);
+    reportCountTimer = null;
     displayedReportCount = finalValue;
     reportCountEl.textContent = finalValue.toLocaleString("en-SG");
   }
 
-  requestAnimationFrame(tick);
+  reportCountTimer = setInterval(() => tick(performance.now()), 16);
+  tick(performance.now());
 }
 
 async function handleSubmit(event) {
