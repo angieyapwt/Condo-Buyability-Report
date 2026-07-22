@@ -2,8 +2,8 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "hero-credibility-report-count-2026-07-22-v16",
-  defaultReportCount: 127,
+  frontendVersion: "ticker-report-count-2026-07-22-v17",
+  defaultReportCount: 140,
 };
 
 const CONTACT_WHATSAPP_URL = `https://wa.me/${CONFIG.whatsappNumber}`;
@@ -148,13 +148,13 @@ async function handleSubmit(event) {
       notifyClientError(lead, error);
       showGenericError();
       submitButton.disabled = false;
-      submitButton.textContent = "Get My Free Report";
+      submitButton.textContent = "Get My Instant Report";
       return;
     }
     notifyClientError(lead, error);
     showGenericError();
     submitButton.disabled = false;
-    submitButton.textContent = "Get My Free Report";
+    submitButton.textContent = "Get My Instant Report";
   }
 }
 

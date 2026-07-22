@@ -8,7 +8,7 @@
       name="description"
       content="Get a free structured Buyability score for any Singapore condo you are eyeing. No cost, no obligation. Report sent straight to your email."
     />
-    <meta name="frontend-version" content="hero-credibility-report-count-2026-07-22-v16" />
+    <meta name="frontend-version" content="ticker-report-count-2026-07-22-v17" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -26,12 +26,17 @@
             <span>No cost</span>
             <span>No obligation</span>
           </div>
-          <div class="credibility-strip" aria-label="Report credibility">
-            <p>
-              Prepared by licensed property agents · Referencing URA REALIS, OneMap, URA Master Plan, GLS and HDB MOP
-              indicators
-            </p>
-            <strong><span id="reportCount">127</span> reports requested so far</strong>
+          <div class="credibility-ticker" aria-label="Report credibility">
+            <div class="ticker-track">
+              <span>
+                Powered by real market data • URA REALIS • OneMap • URA Master Plan • GLS • HDB MOP • Prepared by
+                licensed property agents
+              </span>
+              <span aria-hidden="true">
+                Powered by real market data • URA REALIS • OneMap • URA Master Plan • GLS • HDB MOP • Prepared by
+                licensed property agents
+              </span>
+            </div>
           </div>
         </div>
 
@@ -48,8 +53,8 @@
 
         <form id="leadForm" class="lead-form" novalidate>
           <div class="form-head">
-            <p class="eyebrow">Start here</p>
-            <h2>Download your Free Buyability Report</h2>
+            <p class="eyebrow"><span id="reportCount">140</span> Reports Requested</p>
+            <h2>Request Your Free Buyability Report</h2>
           </div>
 
           <label>
@@ -73,7 +78,7 @@
             <datalist id="condoSuggestions"></datalist>
           </label>
 
-          <button type="submit" class="primary">Get My Free Report</button>
+          <button type="submit" class="primary">Get My Instant Report</button>
           <p id="formStatus" class="form-status" role="status"></p>
           <p class="privacy-note">
             By submitting this form, you agree that we may use your name and contact details to prepare your report.

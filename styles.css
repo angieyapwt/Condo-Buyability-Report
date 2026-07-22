@@ -163,36 +163,60 @@ h1 span {
   white-space: nowrap;
 }
 
-.credibility-strip {
-  align-items: center;
+.credibility-ticker {
   border-top: 1px solid rgba(255, 255, 255, 0.18);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
   margin-top: 22px;
   max-width: 760px;
+  overflow: hidden;
   padding-top: 18px;
+  position: relative;
 }
 
-.credibility-strip p {
-  color: rgba(255, 255, 255, 0.82);
-  flex: 1 1 420px;
-  font-size: 13px;
-  line-height: 1.55;
-  margin: 0;
+.credibility-ticker::before,
+.credibility-ticker::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  top: 18px;
+  bottom: 0;
+  width: 38px;
+  z-index: 1;
 }
 
-.credibility-strip strong {
-  border: 1px solid rgba(215, 181, 109, 0.58);
-  border-radius: 999px;
+.credibility-ticker::before {
+  background: linear-gradient(90deg, rgba(4, 18, 54, 0.98), rgba(4, 18, 54, 0));
+  left: 0;
+}
+
+.credibility-ticker::after {
+  background: linear-gradient(270deg, rgba(8, 36, 95, 0.92), rgba(8, 36, 95, 0));
+  right: 0;
+}
+
+.ticker-track {
+  animation: tickerScroll 24s linear infinite;
+  display: flex;
+  gap: 42px;
+  width: max-content;
+}
+
+.ticker-track span {
   color: var(--gold);
-  display: inline-flex;
-  flex: 0 0 auto;
   font-size: 12px;
   font-weight: 800;
-  line-height: 1.15;
-  padding: 8px 11px;
+  letter-spacing: 0.03em;
+  line-height: 1.4;
   white-space: nowrap;
+}
+
+@keyframes tickerScroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(-50% - 21px));
+  }
 }
 
 .hero__preview {
@@ -692,22 +716,23 @@ footer {
     width: auto;
   }
 
-  .credibility-strip {
-    align-items: flex-start;
-    display: grid;
-    gap: 10px;
+  .credibility-ticker {
     margin-top: 18px;
     padding-top: 16px;
   }
 
-  .credibility-strip p {
-    font-size: 12px;
+  .credibility-ticker::before,
+  .credibility-ticker::after {
+    top: 16px;
+    width: 28px;
   }
 
-  .credibility-strip strong {
+  .ticker-track {
+    animation-duration: 20s;
+  }
+
+  .ticker-track span {
     font-size: 11px;
-    justify-self: start;
-    padding: 7px 10px;
   }
 
   button,
