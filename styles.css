@@ -163,6 +163,38 @@ h1 span {
   white-space: nowrap;
 }
 
+.credibility-strip {
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+  max-width: 760px;
+  padding-top: 18px;
+}
+
+.credibility-strip p {
+  color: rgba(255, 255, 255, 0.82);
+  flex: 1 1 420px;
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.credibility-strip strong {
+  border: 1px solid rgba(215, 181, 109, 0.58);
+  border-radius: 999px;
+  color: var(--gold);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.15;
+  padding: 8px 11px;
+  white-space: nowrap;
+}
+
 .hero__preview {
   align-self: center;
   justify-self: center;
@@ -658,6 +690,24 @@ footer {
     font-size: 10.5px;
     padding: 5px 8px;
     width: auto;
+  }
+
+  .credibility-strip {
+    align-items: flex-start;
+    display: grid;
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 16px;
+  }
+
+  .credibility-strip p {
+    font-size: 12px;
+  }
+
+  .credibility-strip strong {
+    font-size: 11px;
+    justify-self: start;
+    padding: 7px 10px;
   }
 
   button,

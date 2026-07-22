@@ -2,7 +2,8 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "main-copy-primary-school-single-row-2026-07-13-v15",
+  frontendVersion: "hero-credibility-report-count-2026-07-22-v16",
+  defaultReportCount: 127,
 };
 
 const CONTACT_WHATSAPP_URL = `https://wa.me/${CONFIG.whatsappNumber}`;
@@ -83,10 +84,27 @@ const resultSection = document.querySelector("#resultSection");
 const reportMount = document.querySelector("#reportMount");
 const suggestions = document.querySelector("#condoSuggestions");
 const submitButton = form.querySelector('button[type="submit"]');
+const reportCountEl = document.querySelector("#reportCount");
 
 function init() {
   suggestions.innerHTML = "";
   form.addEventListener("submit", handleSubmit);
+  loadReportStats();
+}
+
+async function loadReportStats() {
+  if (!reportCountEl) return;
+  reportCountEl.textContent = String(CONFIG.defaultReportCount);
+  if (!CONFIG.appsScriptUrl) return;
+  try {
+    const stats = await jsonp(CONFIG.appsScriptUrl, { action: "publicStats" }, 12000);
+    const count = Number(stats?.reportsRequested);
+    if (Number.isFinite(count) && count >= CONFIG.defaultReportCount) {
+      reportCountEl.textContent = count.toLocaleString("en-SG");
+    }
+  } catch (error) {
+    reportCountEl.textContent = String(CONFIG.defaultReportCount);
+  }
 }
 
 async function handleSubmit(event) {
