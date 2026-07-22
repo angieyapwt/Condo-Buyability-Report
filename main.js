@@ -2,7 +2,7 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "post-fallback-mobile-count-2026-07-22-v34",
+  frontendVersion: "mobile-nocors-appscript-submit-2026-07-22-v35",
   defaultReportCount: 183,
 };
 
@@ -233,6 +233,15 @@ async function handleSubmit(event) {
   setStatus("Preparing your free report and sending it to your email...\nThis usually takes less than 20 seconds. Please do not refresh or go back.", "");
 
   try {
+    if (CONFIG.appsScriptUrl && isMobileViewport()) {
+      await submitToAppsScriptNoCors(lead);
+      renderMobileRequestSent(lead);
+      submitButton.textContent = "Request sent";
+      setStatus("Your request has been sent. Please check your email shortly.", "success");
+      incrementVisibleReportCount();
+      return;
+    }
+
     const result = CONFIG.appsScriptUrl ? await submitToAppsScript(lead) : demoLookup(lead);
     if (result && result.ok === false) throw new Error(result.error || "Request failed");
     renderResult(lead, result);
@@ -299,6 +308,20 @@ function submitToAppsScript(lead) {
   }, 45000);
 }
 
+async function submitToAppsScriptNoCors(lead) {
+  const body = new URLSearchParams();
+  body.set("action", "submitLead");
+  body.set("payload", encodePayload(lead));
+  body.set("submitMode", "no-cors-post");
+  body.set("v", CONFIG.frontendVersion);
+  await fetch(CONFIG.appsScriptUrl, {
+    method: "POST",
+    mode: "no-cors",
+    body,
+    keepalive: true,
+  });
+}
+
 function submitToAppsScriptPostFallback(lead) {
   const fullUrl = new URL(CONFIG.appsScriptUrl);
   fullUrl.searchParams.set("action", "submitLead");
@@ -343,7 +366,7 @@ function incrementVisibleReportCount() {
   reportCountEl.textContent = next.toLocaleString("en-SG");
 }
 
-function renderFallbackReceived(lead) {
+function renderMobileRequestSent(lead) {
   resultSection.hidden = false;
   document.querySelector("#resultTitle").textContent = "Request sent";
   reportMount.innerHTML = `
@@ -352,11 +375,15 @@ function renderFallbackReceived(lead) {
       <h3>Your request has been sent.</h3>
       <p>
         Please check <strong>${escapeHtml(lead.email)}</strong> shortly. The report usually takes less than 20 seconds
-        to prepare and send.
+        to prepare and send. If the development is still under review, we will email you separately within 1–3 working days.
       </p>
       <a class="whatsapp-button" href="${whatsappLink(lead)}" target="_blank" rel="noreferrer">WhatsApp Us</a>
     </div>`;
   scrollToResult();
+}
+
+function renderFallbackReceived(lead) {
+  renderMobileRequestSent(lead);
 }
 
 function renderResult(lead, result) {
