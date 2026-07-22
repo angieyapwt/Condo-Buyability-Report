@@ -2,7 +2,7 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "desktop-mobile-shared-submit-2026-07-22-v31",
+  frontendVersion: "mobile-submit-priority-2026-07-22-v32",
   defaultReportCount: 177,
 };
 
@@ -113,9 +113,8 @@ async function loadReportStats() {
 }
 
 function resolveReportCountTarget() {
-  if (!CONFIG.appsScriptUrl) {
+  if (!CONFIG.appsScriptUrl || isMobileViewport()) {
     reportCountResolved = true;
-    reportCountEl.textContent = "0";
     return Promise.resolve(reportCountTarget);
   }
 
@@ -289,6 +288,10 @@ function encodePayload(lead) {
   return btoa(unescape(encodeURIComponent(JSON.stringify(lead))));
 }
 
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 760px)").matches;
+}
+
 function notifyClientError(lead, error) {
   if (!CONFIG.appsScriptUrl) return;
   jsonp(CONFIG.appsScriptUrl, {
@@ -415,7 +418,6 @@ function jsonp(url, params, timeoutMs = 45000) {
     const fullUrl = new URL(url);
     Object.entries(params).forEach(([key, value]) => fullUrl.searchParams.set(key, value));
     fullUrl.searchParams.set("callback", callback);
-    fullUrl.searchParams.set("_", `${Date.now()}${Math.random().toString(36).slice(2)}`);
     const timer = setTimeout(() => {
       cleanup();
       reject(new Error("Request timed out"));
