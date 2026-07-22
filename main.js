@@ -2,7 +2,7 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "mobile-jsonp-error-tolerant-2026-07-22-v29",
+  frontendVersion: "mobile-direct-submit-email-copy-2026-07-22-v30",
   defaultReportCount: 177,
 };
 
@@ -232,6 +232,15 @@ async function handleSubmit(event) {
   const requestStartedAt = Date.now();
 
   try {
+    if (CONFIG.appsScriptUrl && isMobileViewport()) {
+      submitToAppsScriptFireAndForget(lead);
+      clearTimeout(progressTimer);
+      renderMobileRequestReceived(lead);
+      submitButton.textContent = "Request received";
+      setStatus("Request received. Please check your email shortly.", "success");
+      return;
+    }
+
     const result = CONFIG.appsScriptUrl ? await submitToAppsScript(lead) : demoLookup(lead);
     clearTimeout(progressTimer);
     if (result && result.ok === false) throw new Error(result.error || "Request failed");
@@ -288,8 +297,30 @@ function demoLookup(lead) {
 function submitToAppsScript(lead) {
   return jsonp(CONFIG.appsScriptUrl, {
     action: "submitLead",
-    payload: btoa(unescape(encodeURIComponent(JSON.stringify(lead)))),
+    payload: encodePayload(lead),
   }, 120000);
+}
+
+function submitToAppsScriptFireAndForget(lead) {
+  const iframe = document.createElement("iframe");
+  iframe.name = `condoSubmit_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  iframe.style.display = "none";
+  iframe.setAttribute("aria-hidden", "true");
+  iframe.src = appsScriptSubmitUrl(lead);
+  document.body.appendChild(iframe);
+  setTimeout(() => iframe.remove(), 180000);
+}
+
+function appsScriptSubmitUrl(lead) {
+  const fullUrl = new URL(CONFIG.appsScriptUrl);
+  fullUrl.searchParams.set("action", "submitLead");
+  fullUrl.searchParams.set("payload", encodePayload(lead));
+  fullUrl.searchParams.set("_", `${Date.now()}${Math.random().toString(36).slice(2)}`);
+  return fullUrl.toString();
+}
+
+function encodePayload(lead) {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(lead))));
 }
 
 function shouldUseMobileFallback(error, startedAt) {
@@ -306,11 +337,31 @@ function notifyClientError(lead, error) {
   if (!CONFIG.appsScriptUrl) return;
   jsonp(CONFIG.appsScriptUrl, {
     action: "clientError",
-    payload: btoa(unescape(encodeURIComponent(JSON.stringify(lead)))),
+    payload: encodePayload(lead),
     error: `${CONFIG.frontendVersion}: ${error?.message || "Unknown web app error"}`,
     userAgent: navigator.userAgent || "",
     pageUrl: window.location.href,
   }, 20000).catch(() => {});
+}
+
+function renderMobileRequestReceived(lead) {
+  resultSection.hidden = false;
+  document.querySelector("#resultTitle").textContent = "Request received";
+  reportMount.innerHTML = `
+    <div class="manual-message">
+      <p class="eyebrow">Report request</p>
+      <h3>Thank you ${escapeHtml(lead.name)}.</h3>
+      <p>
+        Your Buyability Report request for <strong>${escapeHtml(lead.condo)}</strong> has been received.
+        If the development profile is available, the report will be emailed to you shortly.
+      </p>
+      <p>
+        If this development is still being added to our research database, we will prepare your report personally
+        and email it to you within 1–3 working days.
+      </p>
+      <a class="whatsapp-button" href="${whatsappLink(lead)}" target="_blank" rel="noreferrer">WhatsApp Us</a>
+    </div>`;
+  scrollToResult();
 }
 
 function renderResult(lead, result) {
