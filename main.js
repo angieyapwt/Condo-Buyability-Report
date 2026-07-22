@@ -2,7 +2,7 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "instant-live-countup-2026-07-22-v22",
+  frontendVersion: "scroll-countup-lead-row-count-2026-07-22-v23",
   defaultReportCount: 153,
 };
 
@@ -87,6 +87,8 @@ const submitButton = form.querySelector('button[type="submit"]');
 const reportCountEl = document.querySelector("#reportCount");
 let displayedReportCount = 0;
 let reportCountTimer = null;
+let reportCountStarted = false;
+let reportCountTarget = CONFIG.defaultReportCount;
 
 function init() {
   suggestions.innerHTML = "";
@@ -98,7 +100,9 @@ async function loadReportStats() {
   if (!reportCountEl) return;
   reportCountEl.textContent = "0";
   displayedReportCount = 0;
-  animateReportCount(CONFIG.defaultReportCount);
+  reportCountStarted = false;
+  reportCountTarget = CONFIG.defaultReportCount;
+  observeReportCount();
   if (!CONFIG.appsScriptUrl) {
     return;
   }
@@ -107,10 +111,43 @@ async function loadReportStats() {
     .then((stats) => {
       const count = Number(stats?.reportsRequested);
       if (Number.isFinite(count) && count >= CONFIG.defaultReportCount) {
-        animateReportCount(count);
+        setReportCountTarget(count);
       }
     })
     .catch(() => {});
+}
+
+function observeReportCount() {
+  const target = reportCountEl.closest(".preview-count") || reportCountEl;
+  if (!("IntersectionObserver" in window)) {
+    startReportCountAnimation();
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    if (!entries.some((entry) => entry.isIntersecting)) return;
+    observer.disconnect();
+    startReportCountAnimation();
+  }, {
+    root: null,
+    rootMargin: "0px 0px -8% 0px",
+    threshold: 0.35,
+  });
+
+  observer.observe(target);
+}
+
+function setReportCountTarget(count) {
+  reportCountTarget = Math.max(CONFIG.defaultReportCount, Math.round(Number(count) || CONFIG.defaultReportCount));
+  if (reportCountStarted) {
+    animateReportCount(reportCountTarget);
+  }
+}
+
+function startReportCountAnimation() {
+  if (reportCountStarted) return;
+  reportCountStarted = true;
+  animateReportCount(reportCountTarget);
 }
 
 function animateReportCount(target) {
@@ -127,7 +164,7 @@ function animateReportCount(target) {
     return;
   }
 
-  const durationMs = 900;
+  const durationMs = 1800;
   const startedAt = performance.now();
 
   function tick(now) {
