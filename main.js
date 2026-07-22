@@ -2,8 +2,8 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "count-fallback-166-2026-07-22-v24",
-  defaultReportCount: 166,
+  frontendVersion: "single-resolved-count-2026-07-22-v25",
+  defaultReportCount: 174,
 };
 
 const CONTACT_WHATSAPP_URL = `https://wa.me/${CONFIG.whatsappNumber}`;
@@ -89,6 +89,9 @@ let displayedReportCount = 0;
 let reportCountTimer = null;
 let reportCountStarted = false;
 let reportCountTarget = CONFIG.defaultReportCount;
+let reportCountResolved = false;
+let reportCountVisible = false;
+let reportCountStatsPromise = null;
 
 function init() {
   suggestions.innerHTML = "";
@@ -101,20 +104,33 @@ async function loadReportStats() {
   reportCountEl.textContent = "0";
   displayedReportCount = 0;
   reportCountStarted = false;
+  reportCountResolved = false;
+  reportCountVisible = false;
   reportCountTarget = CONFIG.defaultReportCount;
+  reportCountStatsPromise = resolveReportCountTarget();
+
   observeReportCount();
+}
+
+function resolveReportCountTarget() {
   if (!CONFIG.appsScriptUrl) {
-    return;
+    reportCountResolved = true;
+    return Promise.resolve(reportCountTarget);
   }
 
-  jsonp(CONFIG.appsScriptUrl, { action: "publicStats" }, 8000)
+  return jsonp(CONFIG.appsScriptUrl, { action: "publicStats" }, 8000)
     .then((stats) => {
       const count = Number(stats?.reportsRequested);
       if (Number.isFinite(count) && count >= CONFIG.defaultReportCount) {
-        setReportCountTarget(count);
+        reportCountTarget = Math.round(count);
       }
+      reportCountResolved = true;
+      return reportCountTarget;
     })
-    .catch(() => {});
+    .catch(() => {
+      reportCountResolved = true;
+      return reportCountTarget;
+    });
 }
 
 function observeReportCount() {
@@ -137,17 +153,25 @@ function observeReportCount() {
   observer.observe(target);
 }
 
-function setReportCountTarget(count) {
-  reportCountTarget = Math.max(CONFIG.defaultReportCount, Math.round(Number(count) || CONFIG.defaultReportCount));
-  if (reportCountStarted) {
-    animateReportCount(reportCountTarget);
-  }
-}
-
 function startReportCountAnimation() {
   if (reportCountStarted) return;
-  reportCountStarted = true;
-  animateReportCount(reportCountTarget);
+  reportCountVisible = true;
+
+  const start = () => {
+    if (reportCountStarted || !reportCountVisible) return;
+    reportCountStarted = true;
+    animateReportCount(reportCountTarget);
+  };
+
+  if (reportCountResolved) {
+    start();
+    return;
+  }
+
+  Promise.race([
+    reportCountStatsPromise || Promise.resolve(reportCountTarget),
+    new Promise((resolve) => setTimeout(resolve, 900)),
+  ]).then(start);
 }
 
 function animateReportCount(target) {
