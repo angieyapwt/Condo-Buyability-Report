@@ -2,7 +2,7 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "direct-report-count-no-baseline-2026-07-22-v26",
+  frontendVersion: "wait-for-live-count-2026-07-22-v27",
   defaultReportCount: 153,
 };
 
@@ -101,7 +101,7 @@ function init() {
 
 async function loadReportStats() {
   if (!reportCountEl) return;
-  reportCountEl.textContent = "0";
+  reportCountEl.textContent = "...";
   displayedReportCount = 0;
   reportCountStarted = false;
   reportCountResolved = false;
@@ -115,6 +115,7 @@ async function loadReportStats() {
 function resolveReportCountTarget() {
   if (!CONFIG.appsScriptUrl) {
     reportCountResolved = true;
+    reportCountEl.textContent = "0";
     return Promise.resolve(reportCountTarget);
   }
 
@@ -168,10 +169,7 @@ function startReportCountAnimation() {
     return;
   }
 
-  Promise.race([
-    reportCountStatsPromise || Promise.resolve(reportCountTarget),
-    new Promise((resolve) => setTimeout(resolve, 900)),
-  ]).then(start);
+  (reportCountStatsPromise || Promise.resolve(reportCountTarget)).then(start);
 }
 
 function animateReportCount(target) {
