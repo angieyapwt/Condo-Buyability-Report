@@ -2,7 +2,7 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "mobile-count-timeout-floor-177-2026-07-22-v28",
+  frontendVersion: "mobile-jsonp-error-tolerant-2026-07-22-v29",
   defaultReportCount: 177,
 };
 
@@ -428,6 +428,7 @@ function jsonp(url, params, timeoutMs = 45000) {
     const fullUrl = new URL(url);
     Object.entries(params).forEach(([key, value]) => fullUrl.searchParams.set(key, value));
     fullUrl.searchParams.set("callback", callback);
+    fullUrl.searchParams.set("_", `${Date.now()}${Math.random().toString(36).slice(2)}`);
     const timer = setTimeout(() => {
       cleanup();
       reject(new Error("Request timed out"));
@@ -442,8 +443,8 @@ function jsonp(url, params, timeoutMs = 45000) {
       resolve(data);
     };
     script.onerror = () => {
-      cleanup();
-      reject(new Error("Request failed"));
+      // Some mobile browsers report Apps Script JSONP redirects as errors even when the callback still arrives.
+      // Keep waiting for the callback and let the timeout decide if the request really failed.
     };
     script.src = fullUrl.toString();
     document.body.appendChild(script);
