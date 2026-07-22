@@ -2,8 +2,8 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "wait-for-live-count-2026-07-22-v27",
-  defaultReportCount: 153,
+  frontendVersion: "mobile-count-timeout-floor-177-2026-07-22-v28",
+  defaultReportCount: 177,
 };
 
 const CONTACT_WHATSAPP_URL = `https://wa.me/${CONFIG.whatsappNumber}`;
@@ -119,7 +119,7 @@ function resolveReportCountTarget() {
     return Promise.resolve(reportCountTarget);
   }
 
-  return jsonp(CONFIG.appsScriptUrl, { action: "publicStats" }, 8000)
+  return jsonp(CONFIG.appsScriptUrl, { action: "publicStats" }, 45000)
     .then((stats) => {
       const count = Number(stats?.reportsRequested);
       if (Number.isFinite(count) && count >= CONFIG.defaultReportCount) {
