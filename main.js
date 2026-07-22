@@ -2,8 +2,8 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "mobile-submit-priority-2026-07-22-v32",
-  defaultReportCount: 177,
+  frontendVersion: "pre-today-submit-restore-2026-07-22-v33",
+  defaultReportCount: 183,
 };
 
 const CONTACT_WHATSAPP_URL = `https://wa.me/${CONFIG.whatsappNumber}`;
@@ -92,6 +92,7 @@ let reportCountTarget = CONFIG.defaultReportCount;
 let reportCountResolved = false;
 let reportCountVisible = false;
 let reportCountStatsPromise = null;
+let isSubmitting = false;
 
 function init() {
   suggestions.innerHTML = "";
@@ -113,11 +114,26 @@ async function loadReportStats() {
 }
 
 function resolveReportCountTarget() {
-  if (!CONFIG.appsScriptUrl || isMobileViewport()) {
+  if (!CONFIG.appsScriptUrl) {
     reportCountResolved = true;
     return Promise.resolve(reportCountTarget);
   }
 
+  if (isMobileViewport()) {
+    reportCountResolved = true;
+    window.setTimeout(() => {
+      if (isSubmitting) return;
+      fetchReportCountTarget().then((count) => {
+        if (Number(count) > displayedReportCount) animateReportCount(count);
+      });
+    }, 30000);
+    return Promise.resolve(reportCountTarget);
+  }
+
+  return fetchReportCountTarget();
+}
+
+function fetchReportCountTarget() {
   return jsonp(CONFIG.appsScriptUrl, { action: "publicStats" }, 45000)
     .then((stats) => {
       const count = Number(stats?.reportsRequested);
@@ -223,16 +239,12 @@ async function handleSubmit(event) {
   }
 
   submitButton.disabled = true;
-  submitButton.textContent = "Request received...";
-  setStatus("Request received. We are checking the condo and preparing the email now...", "");
-  const progressTimer = setTimeout(() => {
-    submitButton.textContent = "Emailing report...";
-    setStatus("Almost done. Your report will be sent to your email once the PDF is ready.", "");
-  }, 800);
+  isSubmitting = true;
+  submitButton.textContent = "Sending report...";
+  setStatus("Preparing your free report and sending it to your email...", "");
 
   try {
     const result = CONFIG.appsScriptUrl ? await submitToAppsScript(lead) : demoLookup(lead);
-    clearTimeout(progressTimer);
     if (result && result.ok === false) throw new Error(result.error || "Request failed");
     renderResult(lead, result);
     submitButton.textContent = result.duplicate ? "Already requested" : result.found ? "Report emailed" : "Request received";
@@ -245,11 +257,11 @@ async function handleSubmit(event) {
       result.duplicate ? "error" : "success",
     );
   } catch (error) {
-    clearTimeout(progressTimer);
-    notifyClientError(lead, error);
     showGenericError();
     submitButton.disabled = false;
     submitButton.textContent = "Get My Instant Report";
+  } finally {
+    isSubmitting = false;
   }
 }
 
