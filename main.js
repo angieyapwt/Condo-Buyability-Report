@@ -2,7 +2,7 @@ const CONFIG = {
   // Replace this with your deployed Apps Script Web App URL.
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbyjaUJFlShe-bg4jm3uOm3b4e7UviLe1jBL1TTMVXP1VDlFhfqkPu0nPapdmYQNh4sC4A/exec",
   whatsappNumber: "6583963088",
-  frontendVersion: "appscript-postmessage-bridge-2026-07-22-v37",
+  frontendVersion: "realtime-report-count-polling-2026-07-22-v40",
   defaultReportCount: 153,
 };
 
@@ -92,12 +92,14 @@ let reportCountTarget = CONFIG.defaultReportCount;
 let reportCountResolved = false;
 let reportCountVisible = false;
 let reportCountStatsPromise = null;
+let reportCountRefreshTimer = null;
 let isSubmitting = false;
 
 function init() {
   suggestions.innerHTML = "";
   form.addEventListener("submit", handleSubmit);
   loadReportStats();
+  scheduleReportCountRefresh();
 }
 
 async function loadReportStats() {
@@ -113,6 +115,19 @@ async function loadReportStats() {
   observeReportCount();
 }
 
+function scheduleReportCountRefresh() {
+  if (!reportCountEl || reportCountRefreshTimer) return;
+  reportCountRefreshTimer = window.setInterval(() => {
+    if (document.hidden || !CONFIG.appsScriptUrl) return;
+    refreshReportCountTarget();
+  }, 15000);
+}
+
+function refreshReportCountTarget() {
+  reportCountStatsPromise = fetchReportCountTarget();
+  return reportCountStatsPromise;
+}
+
 function resolveReportCountTarget() {
   if (!CONFIG.appsScriptUrl) {
     reportCountResolved = true;
@@ -124,7 +139,7 @@ function resolveReportCountTarget() {
 
 function fetchReportCountTarget() {
   const statsRequest = isMobileViewport()
-    ? appsScriptBridge("bridgePublicStats", {}, "GET", 45000)
+    ? firstSuccessfulStatsRequest()
     : jsonp(CONFIG.appsScriptUrl, { action: "publicStats" }, 45000);
 
   return statsRequest
@@ -134,12 +149,34 @@ function fetchReportCountTarget() {
         reportCountTarget = Math.round(count);
       }
       reportCountResolved = true;
+      if (reportCountVisible && reportCountStarted && reportCountTarget > displayedReportCount) {
+        animateReportCount(reportCountTarget);
+      }
       return reportCountTarget;
     })
     .catch(() => {
       reportCountResolved = true;
       return reportCountTarget;
     });
+}
+
+function firstSuccessfulStatsRequest() {
+  const requests = [
+    jsonp(CONFIG.appsScriptUrl, { action: "publicStats", v: CONFIG.frontendVersion }, 12000),
+    appsScriptBridge("bridgePublicStats", { v: CONFIG.frontendVersion }, "GET", 18000),
+  ];
+
+  if (Promise.any) return Promise.any(requests);
+
+  return new Promise((resolve, reject) => {
+    let failures = 0;
+    requests.forEach((request) => {
+      request.then(resolve).catch((error) => {
+        failures += 1;
+        if (failures === requests.length) reject(error);
+      });
+    });
+  });
 }
 
 function observeReportCount() {
@@ -166,19 +203,9 @@ function startReportCountAnimation() {
   if (reportCountStarted) return;
   reportCountVisible = true;
 
-  const start = () => {
-    if (reportCountStarted || !reportCountVisible) return;
-    reportCountStarted = true;
-    animateReportCount(reportCountTarget);
-  };
-
-  if (reportCountResolved) {
-    start();
-    return;
-  }
-
+  reportCountStarted = true;
+  animateReportCount(CONFIG.defaultReportCount);
   reportCountStatsPromise = reportCountStatsPromise || resolveReportCountTarget();
-  reportCountStatsPromise.then(start);
 }
 
 function animateReportCount(target) {
@@ -235,9 +262,15 @@ async function handleSubmit(event) {
   isSubmitting = true;
   submitButton.textContent = "Sending report...";
   setStatus("Preparing your free report and sending it to your email...\nThis usually takes less than 20 seconds. Please do not refresh or go back.", "");
+  let optimisticSentTimer = null;
 
   try {
     if (CONFIG.appsScriptUrl && isMobileViewport()) {
+      optimisticSentTimer = window.setTimeout(() => {
+        if (!isSubmitting) return;
+        submitButton.textContent = "Report emailed";
+        setStatus("Your PDF report has been sent to your email. Please check shortly.", "success");
+      }, 20000);
       const result = await submitToAppsScriptBridge(lead);
       if (result && result.ok === false) throw new Error(result.error || "Request failed");
       renderResult(lead, result);
@@ -250,7 +283,7 @@ async function handleSubmit(event) {
           : "Request received. We will prepare this report manually and email you within 1–3 working days.",
         result.duplicate ? "error" : "success",
       );
-      if (!result.duplicate) incrementVisibleReportCount();
+      updateReportCountFromResult(result, !result.duplicate);
       return;
     }
 
@@ -266,7 +299,7 @@ async function handleSubmit(event) {
         : "Request received. We will prepare this report manually and email you within 1–3 working days.",
       result.duplicate ? "error" : "success",
     );
-    if (!result.duplicate) incrementVisibleReportCount();
+    updateReportCountFromResult(result, !result.duplicate);
   } catch (error) {
     if (CONFIG.appsScriptUrl) {
       try {
@@ -285,6 +318,7 @@ async function handleSubmit(event) {
     submitButton.disabled = false;
     submitButton.textContent = "Get My Instant Report";
   } finally {
+    if (optimisticSentTimer) window.clearTimeout(optimisticSentTimer);
     isSubmitting = false;
   }
 }
@@ -384,6 +418,24 @@ function incrementVisibleReportCount() {
   displayedReportCount = next;
   reportCountTarget = Math.max(reportCountTarget, next);
   reportCountEl.textContent = next.toLocaleString("en-SG");
+}
+
+function updateReportCountFromResult(result, shouldIncrementFallback) {
+  if (!reportCountEl) return;
+  const liveCount = Number(result?.reportsRequested);
+  if (Number.isFinite(liveCount) && liveCount >= CONFIG.defaultReportCount) {
+    reportCountTarget = Math.round(liveCount);
+    reportCountResolved = true;
+    if (reportCountStarted) {
+      animateReportCount(reportCountTarget);
+    } else {
+      reportCountEl.textContent = reportCountTarget.toLocaleString("en-SG");
+      displayedReportCount = reportCountTarget;
+    }
+    return;
+  }
+
+  if (shouldIncrementFallback) incrementVisibleReportCount();
 }
 
 function renderMobileReportSent(lead) {
